@@ -24,6 +24,16 @@ function createApp() {
   app.set('views', path.join(__dirname, '..', 'views'));
   app.disable('x-powered-by');
 
+  // Every response here is per-session/personalized — none of it should be
+  // cached. This also matters on Vercel specifically: its edge defaults to
+  // marking function responses publicly cacheable, and a publicly-cacheable
+  // response has its Set-Cookie header stripped (to avoid leaking one
+  // visitor's session into a shared cache) — which silently broke login.
+  app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
+
   // Zero-dependency diagnostic route, mounted before every other middleware,
   // so it can be used to rule out a hang in the Vercel/Express wiring itself
   // vs. a hang somewhere further down the middleware chain (session/DB/etc).
