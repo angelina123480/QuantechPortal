@@ -14,6 +14,7 @@
   var prioritySelect = document.getElementById('filterPriority');
   var categorySelect = document.getElementById('filterCategory');
   var technicianSelect = document.getElementById('filterTechnician');
+  var exportLink = document.getElementById('exportCsvLink');
 
   function applyFromQueryString() {
     var params = new URLSearchParams(window.location.search);
@@ -34,6 +35,18 @@
     return true;
   }
 
+  function updateExportLink() {
+    if (!exportLink) return;
+    var params = new URLSearchParams();
+    if (searchInput && searchInput.value.trim()) params.set('q', searchInput.value.trim());
+    if (statusSelect && statusSelect.value) params.set('status', statusSelect.value);
+    if (prioritySelect && prioritySelect.value) params.set('priority', prioritySelect.value);
+    if (categorySelect && categorySelect.value) params.set('category', categorySelect.value);
+    if (technicianSelect && technicianSelect.value) params.set('technician', technicianSelect.value);
+    var qs = params.toString();
+    exportLink.href = '/admin/export.csv' + (qs ? '?' + qs : '');
+  }
+
   function filterRows() {
     var visible = 0;
     rows.forEach(function (row) {
@@ -43,6 +56,7 @@
     });
     if (emptyState) emptyState.hidden = visible !== 0;
     if (rowCount) rowCount.textContent = visible + ' of ' + rows.length + ' tickets shown';
+    updateExportLink();
   }
 
   [searchInput, statusSelect, prioritySelect, categorySelect, technicianSelect].forEach(function (control) {

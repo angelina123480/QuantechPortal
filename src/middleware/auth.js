@@ -1,10 +1,11 @@
 const userModel = require('../models/userModel');
 const { STAFF_ROLES } = require('../config/constants');
+const { asyncHandler } = require('../utils/asyncHandler');
 
 // Loads the logged-in user (if any) onto req/res.locals for every request.
-function attachUser(req, res, next) {
+const attachUser = asyncHandler(async function attachUser(req, res, next) {
   if (req.session && req.session.userId) {
-    const user = userModel.findById(req.session.userId);
+    const user = await userModel.findById(req.session.userId);
     if (user) {
       req.user = user;
       res.locals.currentUser = user;
@@ -14,7 +15,7 @@ function attachUser(req, res, next) {
     }
   }
   next();
-}
+});
 
 function requireLogin(req, res, next) {
   if (!req.user) {

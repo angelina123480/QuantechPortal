@@ -11,9 +11,9 @@ function showLogin(req, res) {
   });
 }
 
-function login(req, res) {
+async function login(req, res) {
   const { email, password } = req.body;
-  const user = userModel.findByEmail(email);
+  const user = await userModel.findByEmail(email);
 
   if (!user || !userModel.verifyPassword(user, password || '')) {
     return res.status(401).render('auth/login', {

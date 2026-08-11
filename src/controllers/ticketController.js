@@ -1,6 +1,6 @@
 const ticketModel = require('../models/ticketModel');
 const userModel = require('../models/userModel');
-const { toAttachmentRecord } = require('../middleware/upload');
+const { uploadAttachments } = require('../middleware/upload');
 const { setFlash } = require('../utils/flash');
 const { CATEGORIES, PRIORITIES, STATUSES } = require('../config/constants');
 
@@ -8,20 +8,29 @@ function wantsJson(req) {
   return req.xhr || req.get('X-Requested-With') === 'fetch' || (req.get('Accept') || '').includes('application/json');
 }
 
-function serializeTicket(ticket) {
+async function serializeTicket(ticket) {
+  const relatedIds = ticket.history.map((h) => h.authorId).filter(Boolean);
+  if (ticket.assignedTechnicianId) relatedIds.push(ticket.assignedTechnicianId);
+  const users = await userModel.findByIds(relatedIds);
+  const usersById = Object.fromEntries(users.map((u) => [u.id, u]));
+
   return {
     ...ticket,
     isOverdue: ticketModel.isOverdue(ticket),
-    assignedTechnician: ticket.assignedTechnicianId ? userModel.findById(ticket.assignedTechnicianId) : null,
-    history: ticket.history.map((h) => {
-      const author = h.authorId ? userModel.findById(h.authorId) : null;
-      return { ...h, isStaffAuthor: author ? userModel.isStaff(author) : false };
-    }),
+    assignedTechnician: ticket.assignedTechnicianId ? usersById[ticket.assignedTechnicianId] || null : null,
+    history: ticket.history.map((h) => ({
+      ...h,
+      isStaffAuthor: h.authorId && usersById[h.authorId] ? userModel.isStaff(usersById[h.authorId]) : false,
+    })),
   };
 }
 
-function list(req, res) {
-  const tickets = ticketModel.listVisibleTo(req.user).map(serializeTicket);
+async function serializeTickets(tickets) {
+  return Promise.all(tickets.map(serializeTicket));
+}
+
+async function list(req, res) {
+  const tickets = await serializeTickets(await ticketModel.listVisibleTo(req.user));
   res.render('tickets/list', {
     title: 'My Tickets',
     tickets,
@@ -60,7 +69,7 @@ function validateCreate(body) {
   return errors;
 }
 
-function create(req, res) {
+async function create(req, res) {
   const errors = validateCreate(req.body);
 
   if (Object.keys(errors).length > 0) {
@@ -73,14 +82,14 @@ function create(req, res) {
     });
   }
 
-  const attachments = (req.files || []).map(toAttachmentRecord);
-  const ticket = ticketModel.create(req.body, req.user, attachments);
+  const attachments = await uploadAttachments(req.files);
+  const ticket = await ticketModel.create(req.body, req.user, attachments);
   setFlash(req, 'success', `Ticket ${ticket.ticketNumber} was submitted successfully.`);
   res.redirect(`/tickets/${ticket.id}?created=1`);
 }
 
-function loadTicketOr404(req, res) {
-  const ticket = ticketModel.findById(req.params.id);
+async function loadTicketOr404(req, res) {
+  const ticket = await ticketModel.findById(req.params.id);
   if (!ticket || !ticketModel.canAccess(req.user, ticket)) {
     res.status(404).render('errors/404', { title: 'Ticket not found' });
     return null;
@@ -88,22 +97,22 @@ function loadTicketOr404(req, res) {
   return ticket;
 }
 
-function detail(req, res) {
-  const ticket = loadTicketOr404(req, res);
+async function detail(req, res) {
+  const ticket = await loadTicketOr404(req, res);
   if (!ticket) return;
 
   res.render('tickets/detail', {
     title: `${ticket.ticketNumber} · ${ticket.title}`,
-    ticket: serializeTicket(ticket),
-    technicians: userModel.listTechnicians(),
+    ticket: await serializeTicket(ticket),
+    technicians: await userModel.listTechnicians(),
     statuses: STATUSES,
     priorities: PRIORITIES,
     justCreated: req.query.created === '1',
   });
 }
 
-function reply(req, res) {
-  const ticket = loadTicketOr404(req, res);
+async function reply(req, res) {
+  const ticket = await loadTicketOr404(req, res);
   if (!ticket) return;
 
   const message = (req.body.message || '').trim();
@@ -114,63 +123,85 @@ function reply(req, res) {
   }
 
   const internal = userModel.isStaff(req.user) && req.body.internal === 'on';
-  ticketModel.addReply(ticket, req.user, message, { internal });
+  await ticketModel.addReply(ticket, req.user, message, { internal });
 
-  if (wantsJson(req)) return res.json({ ticket: serializeTicket(ticket) });
+  if (wantsJson(req)) return res.json({ ticket: await serializeTicket(ticket) });
   res.redirect(`/tickets/${ticket.id}`);
 }
 
-function updateStatus(req, res) {
-  const ticket = loadTicketOr404(req, res);
+async function updateStatus(req, res) {
+  const ticket = await loadTicketOr404(req, res);
   if (!ticket) return;
   if (!userModel.isStaff(req.user)) return res.status(403).end();
 
-  ticketModel.changeStatus(ticket, req.user, req.body.status);
-  if (wantsJson(req)) return res.json({ ticket: serializeTicket(ticket) });
+  await ticketModel.changeStatus(ticket, req.user, req.body.status);
+  if (wantsJson(req)) return res.json({ ticket: await serializeTicket(ticket) });
   setFlash(req, 'success', `Status updated to ${ticket.status}.`);
   res.redirect(`/tickets/${ticket.id}`);
 }
 
-function updatePriority(req, res) {
-  const ticket = loadTicketOr404(req, res);
+async function updatePriority(req, res) {
+  const ticket = await loadTicketOr404(req, res);
   if (!ticket) return;
   if (!userModel.isStaff(req.user)) return res.status(403).end();
 
-  ticketModel.changePriority(ticket, req.user, req.body.priority);
-  if (wantsJson(req)) return res.json({ ticket: serializeTicket(ticket) });
+  await ticketModel.changePriority(ticket, req.user, req.body.priority);
+  if (wantsJson(req)) return res.json({ ticket: await serializeTicket(ticket) });
   setFlash(req, 'success', `Priority updated to ${ticket.priority}.`);
   res.redirect(`/tickets/${ticket.id}`);
 }
 
-function assign(req, res) {
-  const ticket = loadTicketOr404(req, res);
+async function assign(req, res) {
+  const ticket = await loadTicketOr404(req, res);
   if (!ticket) return;
   if (!userModel.isStaff(req.user)) return res.status(403).end();
 
-  ticketModel.assignTechnician(ticket, req.user, req.body.technicianId || null);
-  if (wantsJson(req)) return res.json({ ticket: serializeTicket(ticket) });
+  await ticketModel.assignTechnician(ticket, req.user, req.body.technicianId || null);
+  if (wantsJson(req)) return res.json({ ticket: await serializeTicket(ticket) });
   setFlash(req, 'success', 'Technician assignment updated.');
   res.redirect(`/tickets/${ticket.id}`);
 }
 
-function close(req, res) {
-  const ticket = loadTicketOr404(req, res);
+async function loadOwnedTickets(req, ticketIds) {
+  const ids = Array.isArray(ticketIds) ? ticketIds : [ticketIds].filter(Boolean);
+  const tickets = await Promise.all(ids.map((id) => ticketModel.findById(id)));
+  return tickets.filter((ticket) => ticket && ticketModel.canAccess(req.user, ticket));
+}
+
+async function bulkAssign(req, res) {
+  const tickets = await loadOwnedTickets(req, req.body.ticketIds);
+  for (const ticket of tickets) {
+    await ticketModel.assignTechnician(ticket, req.user, req.body.technicianId || null);
+  }
+  res.json({ tickets: await serializeTickets(tickets) });
+}
+
+async function bulkStatus(req, res) {
+  const tickets = await loadOwnedTickets(req, req.body.ticketIds);
+  for (const ticket of tickets) {
+    await ticketModel.changeStatus(ticket, req.user, req.body.status);
+  }
+  res.json({ tickets: await serializeTickets(tickets) });
+}
+
+async function close(req, res) {
+  const ticket = await loadTicketOr404(req, res);
   if (!ticket) return;
   if (userModel.isStaff(req.user)) return res.status(403).end();
 
-  ticketModel.closeTicket(ticket, req.user);
-  if (wantsJson(req)) return res.json({ ticket: serializeTicket(ticket) });
+  await ticketModel.closeTicket(ticket, req.user);
+  if (wantsJson(req)) return res.json({ ticket: await serializeTicket(ticket) });
   setFlash(req, 'success', 'Ticket closed. Thanks for confirming!');
   res.redirect(`/tickets/${ticket.id}`);
 }
 
-function reopen(req, res) {
-  const ticket = loadTicketOr404(req, res);
+async function reopen(req, res) {
+  const ticket = await loadTicketOr404(req, res);
   if (!ticket) return;
   if (userModel.isStaff(req.user)) return res.status(403).end();
 
-  ticketModel.reopenTicket(ticket, req.user);
-  if (wantsJson(req)) return res.json({ ticket: serializeTicket(ticket) });
+  await ticketModel.reopenTicket(ticket, req.user);
+  if (wantsJson(req)) return res.json({ ticket: await serializeTicket(ticket) });
   setFlash(req, 'success', 'Ticket reopened. QuanTech has been notified.');
   res.redirect(`/tickets/${ticket.id}`);
 }
@@ -184,6 +215,8 @@ module.exports = {
   updateStatus,
   updatePriority,
   assign,
+  bulkAssign,
+  bulkStatus,
   close,
   reopen,
 };

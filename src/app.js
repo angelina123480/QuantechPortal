@@ -1,9 +1,11 @@
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const helmet = require('helmet');
 const morgan = require('morgan');
 
+const pool = require('./data/db');
 const { attachUser } = require('./middleware/auth');
 const { consumeFlash } = require('./utils/flash');
 
@@ -31,6 +33,7 @@ function createApp() {
   app.use(
     session({
       name: 'quantech.sid',
+      store: new pgSession({ pool, tableName: 'session', createTableIfMissing: true }),
       secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,

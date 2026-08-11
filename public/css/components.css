@@ -29,7 +29,7 @@
 .btn-navy:hover { background: var(--color-navy-800); }
 
 .btn-secondary {
-  background: var(--color-white);
+  background: var(--surface-card);
   color: var(--text-primary);
   border-color: var(--border-color-strong);
 }
@@ -42,7 +42,7 @@
 .btn-ghost:hover { background: var(--color-gray-100); color: var(--text-primary); }
 
 .btn-danger {
-  background: var(--color-white);
+  background: var(--surface-card);
   color: var(--color-danger);
   border-color: #F3C5C7;
 }
@@ -288,6 +288,32 @@ table.data-table {
   color: var(--text-muted);
 }
 
+.select-col { width: 36px; }
+.select-col input[type="checkbox"] { width: auto; margin: 0; }
+
+.bulk-action-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  background: var(--color-accent-light);
+  border: 1px solid var(--color-accent-100);
+  border-radius: var(--radius-md);
+}
+.bulk-count {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+.bulk-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bulk-action-group .filter-select { min-width: 170px; }
+
 /* ---------- Forms ---------- */
 .form-group { margin-bottom: 18px; }
 .form-row {
@@ -329,7 +355,7 @@ textarea {
   padding: 10px 12px;
   border: 1px solid var(--border-color-strong);
   border-radius: var(--radius-md);
-  background: var(--color-white);
+  background: var(--surface-card);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -388,7 +414,7 @@ fieldset legend {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 12.5px;
-  background: var(--color-white);
+  background: var(--surface-card);
 }
 .file-chip-name { display: flex; align-items: center; gap: 8px; overflow: hidden; }
 .file-chip-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -411,7 +437,7 @@ fieldset legend {
 .modal-overlay.is-open { display: flex; }
 
 .modal {
-  background: var(--color-white);
+  background: var(--surface-card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: 100%;

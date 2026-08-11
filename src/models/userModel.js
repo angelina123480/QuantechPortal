@@ -1,22 +1,48 @@
 const bcrypt = require('bcryptjs');
-const store = require('../data/store');
+const pool = require('../data/db');
 const { ROLES, STAFF_ROLES } = require('../config/constants');
 
-function findById(id) {
-  return store.users.find((u) => u.id === id) || null;
+function mapUserRow(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    passwordHash: row.password_hash,
+    role: row.role,
+    company: row.company,
+    department: row.department,
+    title: row.title,
+    phone: row.phone,
+    notificationPrefs: row.notification_prefs,
+    createdAt: row.created_at,
+  };
 }
 
-function findByEmail(email) {
+async function findById(id) {
+  const res = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+  return res.rows.length ? mapUserRow(res.rows[0]) : null;
+}
+
+async function findByIds(ids) {
+  const unique = Array.from(new Set(ids)).filter(Boolean);
+  if (unique.length === 0) return [];
+  const res = await pool.query('SELECT * FROM users WHERE id = ANY($1)', [unique]);
+  return res.rows.map(mapUserRow);
+}
+
+async function findByEmail(email) {
   const normalized = String(email || '').trim().toLowerCase();
-  return store.users.find((u) => u.email.toLowerCase() === normalized) || null;
+  const res = await pool.query('SELECT * FROM users WHERE lower(email) = $1', [normalized]);
+  return res.rows.length ? mapUserRow(res.rows[0]) : null;
 }
 
 function verifyPassword(user, plainPassword) {
   return bcrypt.compareSync(plainPassword, user.passwordHash);
 }
 
-function listTechnicians() {
-  return store.users.filter((u) => STAFF_ROLES.includes(u.role));
+async function listTechnicians() {
+  const res = await pool.query('SELECT * FROM users WHERE role = ANY($1) ORDER BY name ASC', [STAFF_ROLES]);
+  return res.rows.map(mapUserRow);
 }
 
 function isStaff(user) {
@@ -27,38 +53,49 @@ function isClient(user) {
   return !!user && user.role === ROLES.CLIENT;
 }
 
-function updateProfile(id, updates) {
-  const user = findById(id);
-  if (!user) return null;
+async function updateProfile(id, updates) {
   const allowed = ['name', 'phone', 'department', 'company'];
+  const sets = [];
+  const params = [];
+
   for (const key of allowed) {
     if (updates[key] !== undefined && updates[key] !== '') {
-      user[key] = updates[key];
+      params.push(updates[key]);
+      sets.push(`${key === 'name' ? 'name' : key} = $${params.length}`);
     }
   }
-  return user;
+  if (sets.length === 0) return findById(id);
+
+  params.push(id);
+  const res = await pool.query(
+    `UPDATE users SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`,
+    params
+  );
+  return res.rows.length ? mapUserRow(res.rows[0]) : null;
 }
 
-function updateNotificationPrefs(id, prefs) {
-  const user = findById(id);
-  if (!user) return null;
-  user.notificationPrefs = {
+async function updateNotificationPrefs(id, prefs) {
+  const notificationPrefs = {
     emailOnReply: !!prefs.emailOnReply,
     emailOnStatusChange: !!prefs.emailOnStatusChange,
     emailOnAssignment: !!prefs.emailOnAssignment,
   };
-  return user;
+  const res = await pool.query(
+    'UPDATE users SET notification_prefs = $1 WHERE id = $2 RETURNING *',
+    [JSON.stringify(notificationPrefs), id]
+  );
+  return res.rows.length ? mapUserRow(res.rows[0]) : null;
 }
 
-function updatePassword(id, newPlainPassword) {
-  const user = findById(id);
-  if (!user) return null;
-  user.passwordHash = bcrypt.hashSync(newPlainPassword, 10);
-  return user;
+async function updatePassword(id, newPlainPassword) {
+  const passwordHash = bcrypt.hashSync(newPlainPassword, 10);
+  const res = await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING *', [passwordHash, id]);
+  return res.rows.length ? mapUserRow(res.rows[0]) : null;
 }
 
 module.exports = {
   findById,
+  findByIds,
   findByEmail,
   verifyPassword,
   listTechnicians,

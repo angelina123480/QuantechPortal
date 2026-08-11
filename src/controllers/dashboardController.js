@@ -3,12 +3,12 @@ const userModel = require('../models/userModel');
 const { buildBarData, buildPriorityDonut } = require('../utils/chartData');
 const { CATEGORIES, PRIORITIES } = require('../config/constants');
 
-function index(req, res) {
+async function index(req, res) {
   if (userModel.isStaff(req.user)) {
     return res.redirect('/admin');
   }
 
-  const tickets = ticketModel.listVisibleTo(req.user);
+  const tickets = await ticketModel.listVisibleTo(req.user);
   const stats = ticketModel.computeStats(tickets);
   const openTickets = tickets.filter((t) => t.status === 'Open');
   const awaitingResponse = tickets.filter((t) => t.status === 'Waiting for Client');

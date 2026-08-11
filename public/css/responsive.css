@@ -32,6 +32,12 @@
 
   .ticket-detail-badges { width: 100%; }
   .donut-chart-wrap { justify-content: center; text-align: left; }
+
+  /* Bulk row selection is a desktop power-user affordance; on narrow screens
+     the stacked card layout has no natural place for it, so it's hidden and
+     each ticket is still fully manageable individually. */
+  .data-table.is-stackable .select-col { display: none; }
+  .bulk-action-bar { display: none; }
 }
 
 @media (max-width: 480px) {

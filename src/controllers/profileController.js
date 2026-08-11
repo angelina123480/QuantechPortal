@@ -8,7 +8,7 @@ function show(req, res) {
   });
 }
 
-function updateInfo(req, res) {
+async function updateInfo(req, res) {
   const { name, phone, department } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).render('profile/index', {
@@ -16,12 +16,12 @@ function updateInfo(req, res) {
       errors: { name: 'Name cannot be empty.' },
     });
   }
-  userModel.updateProfile(req.user.id, { name, phone, department });
+  await userModel.updateProfile(req.user.id, { name, phone, department });
   setFlash(req, 'success', 'Profile updated.');
   res.redirect('/profile');
 }
 
-function updatePassword(req, res) {
+async function updatePassword(req, res) {
   const { currentPassword, newPassword, confirmPassword } = req.body;
 
   if (!userModel.verifyPassword(req.user, currentPassword || '')) {
@@ -43,13 +43,13 @@ function updatePassword(req, res) {
     });
   }
 
-  userModel.updatePassword(req.user.id, newPassword);
+  await userModel.updatePassword(req.user.id, newPassword);
   setFlash(req, 'success', 'Password changed successfully.');
   res.redirect('/profile');
 }
 
-function updateNotifications(req, res) {
-  userModel.updateNotificationPrefs(req.user.id, {
+async function updateNotifications(req, res) {
+  await userModel.updateNotificationPrefs(req.user.id, {
     emailOnReply: req.body.emailOnReply === 'on',
     emailOnStatusChange: req.body.emailOnStatusChange === 'on',
     emailOnAssignment: req.body.emailOnAssignment === 'on',

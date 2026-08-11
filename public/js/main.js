@@ -18,6 +18,25 @@
   if (toggle) toggle.addEventListener('click', toggleSidebar);
   if (overlay) overlay.addEventListener('click', closeSidebar);
 
+  // ---------- Dark mode toggle ----------
+  var themeToggle = document.getElementById('themeToggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', function () {
+      var root = document.documentElement;
+      var current = root.getAttribute('data-theme');
+      var systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var isDarkNow = current === 'dark' || (!current && systemPrefersDark);
+      var next = isDarkNow ? 'light' : 'dark';
+
+      root.setAttribute('data-theme', next);
+      try {
+        window.localStorage.setItem('qt-theme', next);
+      } catch (e) {
+        // localStorage unavailable — theme just won't persist across reloads.
+      }
+    });
+  }
+
   // ---------- Toasts ----------
   var container = document.getElementById('toastContainer');
 

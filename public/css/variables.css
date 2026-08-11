@@ -108,3 +108,63 @@
   --transition-fast: 120ms ease;
   --transition-base: 200ms ease;
 }
+
+/*
+ * Dark mode. Priority/status colors are deliberately NOT redefined here —
+ * they're small, self-contained tint+text pill pairs (badges) that read fine
+ * sitting on a dark surface, and they're validated against CVD separation
+ * checks as a set, so we don't want to re-derive them for a second surface.
+ * Everything else routes through --color-gray-* and a few surface tokens, so
+ * redefining those two groups re-themes every component automatically.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-gray-50: #17233A;
+    --color-gray-100: #1E2C48;
+    --color-gray-150: #24334F;
+    --color-gray-200: #2B3B5A;
+    --color-gray-300: #3A4C6E;
+    --color-gray-400: #6B7A99;
+    --color-gray-500: #94A2BE;
+    --color-gray-600: #B7C1D8;
+    --color-gray-700: #D3DAEA;
+    --color-gray-800: #E7ECF5;
+    --color-gray-900: #F5F7FB;
+
+    --color-accent-light: #17253F;
+    --color-accent-100: #1F3358;
+
+    --surface-page: #0A1220;
+    --surface-card: #131D30;
+    --surface-topbar: #131D30;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-gray-50: #17233A;
+  --color-gray-100: #1E2C48;
+  --color-gray-150: #24334F;
+  --color-gray-200: #2B3B5A;
+  --color-gray-300: #3A4C6E;
+  --color-gray-400: #6B7A99;
+  --color-gray-500: #94A2BE;
+  --color-gray-600: #B7C1D8;
+  --color-gray-700: #D3DAEA;
+  --color-gray-800: #E7ECF5;
+  --color-gray-900: #F5F7FB;
+
+  --color-accent-light: #17253F;
+  --color-accent-100: #1F3358;
+
+  --surface-page: #0A1220;
+  --surface-card: #131D30;
+  --surface-topbar: #131D30;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+}

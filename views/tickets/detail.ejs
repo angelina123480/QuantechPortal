@@ -179,7 +179,12 @@
           </div>
           <div class="meta-row">
             <span class="meta-row-label">SLA target</span>
-            <span class="meta-row-value <%= ticket.isOverdue ? 'text-danger' : '' %>"><%= new Date(ticket.dueAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) %></span>
+            <span class="meta-row-value">
+              <span class="<%= ticket.isOverdue ? 'text-danger' : '' %>"><%= new Date(ticket.dueAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) %></span>
+              <% if (!['Resolved', 'Closed'].includes(ticket.status)) { %>
+                <span class="sla-countdown" data-sla-due="<%= ticket.dueAt.toISOString() %>"></span>
+              <% } %>
+            </span>
           </div>
         </div>
       </div>
@@ -193,7 +198,11 @@
         <% } else { %>
           <% ticket.attachments.forEach(function(file) { %>
             <a href="<%= file.url %>" class="attachment-item" target="_blank" rel="noopener noreferrer">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              <% if (file.mimeType && file.mimeType.startsWith('image/')) { %>
+                <img src="<%= file.url %>" alt="" class="attachment-thumb">
+              <% } else { %>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              <% } %>
               <div>
                 <div><%= file.originalName %></div>
                 <div class="attachment-meta"><%= Math.round(file.size / 1024) %> KB</div>
@@ -206,4 +215,4 @@
   </div>
 </div>
 
-<%- include('../partials/layout-end', { pageScripts: ['ticket-detail'] }) %>
+<%- include('../partials/layout-end', { pageScripts: ['ticket-detail', 'sla-countdown'] }) %>

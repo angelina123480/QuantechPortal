@@ -5,7 +5,10 @@
       <span><%= ticket.company %></span>
       <span>&middot;</span>
       <span><%= new Date(ticket.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></span>
-      <% if (ticket.isOverdue) { %><span class="badge badge-overdue">Overdue</span><% } %>
+      <% if (ticket.isOverdue) { %>
+        <span class="badge badge-overdue">Overdue</span>
+        <span class="sla-countdown sla-countdown-overdue" data-sla-due="<%= ticket.dueAt.toISOString() %>"></span>
+      <% } %>
     </div>
   </div>
   <%- include('priority-badge', { priority: ticket.priority }) %>

@@ -1,9 +1,9 @@
 const articleModel = require('../models/articleModel');
 const { CATEGORIES } = require('../config/constants');
 
-function index(req, res) {
+async function index(req, res) {
   const { q = '', category = '' } = req.query;
-  const articles = articleModel.list({ search: q, category });
+  const articles = await articleModel.list({ search: q, category });
 
   res.render('kb/index', {
     title: 'Knowledge Base',
@@ -14,13 +14,12 @@ function index(req, res) {
   });
 }
 
-function show(req, res) {
-  const article = articleModel.findById(req.params.id);
+async function show(req, res) {
+  const article = await articleModel.findById(req.params.id);
   if (!article) {
     return res.status(404).render('errors/404', { title: 'Article not found' });
   }
-  const related = articleModel
-    .list({ category: article.category })
+  const related = (await articleModel.list({ category: article.category }))
     .filter((a) => a.id !== article.id)
     .slice(0, 4);
 

@@ -88,6 +88,10 @@
 
 <div class="section-title-row">
   <h2>All Tickets</h2>
+  <a href="/admin/export.csv" id="exportCsvLink" class="btn btn-secondary btn-sm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export CSV
+  </a>
 </div>
 
 <div class="table-toolbar">
@@ -114,10 +118,31 @@
   </select>
 </div>
 
+<div class="bulk-action-bar" id="bulkActionBar" hidden>
+  <span id="bulkSelectedCount" class="bulk-count">0 selected</span>
+  <div class="bulk-action-group">
+    <select id="bulkAssignSelect" class="filter-select">
+      <option value="" selected disabled>Assign to&hellip;</option>
+      <option value="__none">Unassigned</option>
+      <% technicians.forEach(function(t) { %><option value="<%= t.id %>"><%= t.name %></option><% }) %>
+    </select>
+    <button type="button" id="bulkAssignApply" class="btn btn-secondary btn-sm" disabled>Apply</button>
+  </div>
+  <div class="bulk-action-group">
+    <select id="bulkStatusSelect" class="filter-select">
+      <option value="" selected disabled>Change status to&hellip;</option>
+      <% statuses.forEach(function(s) { %><option value="<%= s %>"><%= s %></option><% }) %>
+    </select>
+    <button type="button" id="bulkStatusApply" class="btn btn-secondary btn-sm" disabled>Apply</button>
+  </div>
+  <button type="button" id="bulkClear" class="btn btn-ghost btn-sm">Clear selection</button>
+</div>
+
 <div class="table-wrap">
   <table class="data-table is-stackable" id="ticketsTable">
     <thead>
       <tr>
+        <th class="select-col"><input type="checkbox" id="selectAllTickets" aria-label="Select all tickets"></th>
         <th>Ticket #</th>
         <th>Title</th>
         <th>Company</th>
@@ -136,6 +161,7 @@
           data-category="<%= ticket.category %>"
           data-technician="<%= ticket.assignedTechnicianId || '__unassigned' %>"
         >
+          <td data-label="" class="select-col"><input type="checkbox" class="row-select" value="<%= ticket.id %>" aria-label="Select <%= ticket.ticketNumber %>"></td>
           <td data-label="Ticket #">
             <a href="/tickets/<%= ticket.id %>" class="ticket-number-cell"><%= ticket.ticketNumber %></a>
             <% if (ticket.isOverdue) { %> <span class="badge badge-overdue">Overdue</span><% } %>
@@ -181,4 +207,4 @@
 <script type="application/json" data-chart-for="priorityChart"><%- JSON.stringify(priorityChart) %></script>
 <script type="application/json" data-chart-for="categoryChart"><%- JSON.stringify(categoryChart) %></script>
 
-<%- include('../partials/layout-end', { pageScripts }) %>
+<%- include('../partials/layout-end', { pageScripts: pageScripts.concat(['sla-countdown']) }) %>

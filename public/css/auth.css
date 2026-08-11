@@ -71,7 +71,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px 24px;
-  background: var(--color-white);
+  background: var(--surface-card);
 }
 
 .auth-card {
