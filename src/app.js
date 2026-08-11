@@ -24,6 +24,11 @@ function createApp() {
   app.set('views', path.join(__dirname, '..', 'views'));
   app.disable('x-powered-by');
 
+  // Zero-dependency diagnostic route, mounted before every other middleware,
+  // so it can be used to rule out a hang in the Vercel/Express wiring itself
+  // vs. a hang somewhere further down the middleware chain (session/DB/etc).
+  app.get('/healthz', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+
   app.use(helmet());
   app.use(morgan(isProduction ? 'combined' : 'dev'));
   app.use(express.urlencoded({ extended: true }));
