@@ -1,0 +1,83 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1><%= isStaff ? 'All Tickets' : 'My Tickets' %></h1>
+    <p><%= isStaff ? 'Every ticket submitted across QuanTech\'s enterprise clients.' : 'Every ticket submitted by ' + currentUser.company + '.' %></p>
+  </div>
+  <% if (!isStaff) { %>
+    <div class="page-header-actions">
+      <a href="/tickets/new" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Create Ticket
+      </a>
+    </div>
+  <% } %>
+</div>
+
+<div class="table-toolbar">
+  <div class="table-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" id="ticketSearch" placeholder="Search by ticket #, title, or company...">
+  </div>
+  <select id="filterStatus" class="filter-select">
+    <option value="">All statuses</option>
+    <% statuses.forEach(function(s) { %><option value="<%= s %>"><%= s %></option><% }) %>
+  </select>
+  <select id="filterPriority" class="filter-select">
+    <option value="">All priorities</option>
+    <% priorities.forEach(function(p) { %><option value="<%= p %>"><%= p %></option><% }) %>
+  </select>
+  <select id="filterCategory" class="filter-select">
+    <option value="">All categories</option>
+    <% categories.forEach(function(c) { %><option value="<%= c %>"><%= c %></option><% }) %>
+  </select>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table is-stackable" id="ticketsTable">
+    <thead>
+      <tr>
+        <th>Ticket #</th>
+        <th>Subject</th>
+        <% if (isStaff) { %><th>Company</th><% } %>
+        <th>Category</th>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Technician</th>
+        <th>Last Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% tickets.forEach(function(ticket) { %>
+        <tr
+          data-search="<%= (ticket.ticketNumber + ' ' + ticket.title + ' ' + ticket.company).toLowerCase() %>"
+          data-status="<%= ticket.status %>"
+          data-priority="<%= ticket.priority %>"
+          data-category="<%= ticket.category %>"
+          class="is-clickable"
+          data-href="/tickets/<%= ticket.id %>"
+        >
+          <td data-label="Ticket #">
+            <a href="/tickets/<%= ticket.id %>" class="ticket-number-cell"><%= ticket.ticketNumber %></a>
+            <% if (ticket.isOverdue) { %> <span class="badge badge-overdue">Overdue</span><% } %>
+          </td>
+          <td data-label="Subject"><a href="/tickets/<%= ticket.id %>" class="ticket-title-link"><%= ticket.title %></a></td>
+          <% if (isStaff) { %><td data-label="Company"><%= ticket.company %></td><% } %>
+          <td data-label="Category"><%= ticket.category %></td>
+          <td data-label="Priority"><%- include('../partials/priority-badge', { priority: ticket.priority }) %></td>
+          <td data-label="Status"><%- include('../partials/status-badge', { status: ticket.status }) %></td>
+          <td data-label="Technician"><%= ticket.assignedTechnician ? ticket.assignedTechnician.name : '—' %></td>
+          <td data-label="Last Updated"><%= new Date(ticket.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <div class="table-empty-state" id="ticketsEmptyState" <%= tickets.length ? 'hidden' : '' %>>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/></svg>
+    <p><%= tickets.length ? 'No tickets match your filters.' : 'No tickets yet.' %></p>
+  </div>
+</div>
+<p class="table-row-count" id="ticketsRowCount"></p>
+
+<%- include('../partials/layout-end', { pageScripts: ['tickets'] }) %>

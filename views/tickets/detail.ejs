@@ -1,0 +1,209 @@
+<%- include('../partials/layout-start') %>
+
+<% var statusIndex = statuses.indexOf(ticket.status); %>
+
+<% if (justCreated) { %>
+  <div class="confirmation-banner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+    <div>
+      <strong>Ticket <%= ticket.ticketNumber %> was submitted successfully.</strong>
+      <span>QuanTech's support team has been notified and will triage it shortly.</span>
+    </div>
+  </div>
+<% } %>
+
+<div class="ticket-detail-header">
+  <div class="ticket-detail-heading">
+    <span class="ticket-number">
+      <%= ticket.ticketNumber %>
+      <% if (ticket.isOverdue) { %> &middot; <span class="badge badge-overdue">Overdue</span><% } %>
+    </span>
+    <h1><%= ticket.title %></h1>
+    <div class="ticket-detail-badges">
+      <%- include('../partials/priority-badge', { priority: ticket.priority }) %>
+      <%- include('../partials/status-badge', { status: ticket.status }) %>
+      <span class="badge badge-neutral"><%= ticket.category %></span>
+    </div>
+  </div>
+  <% if (!isStaff) { %>
+    <div class="page-header-actions">
+      <% if (ticket.status === 'Resolved') { %>
+        <form action="/tickets/<%= ticket.id %>/close" method="POST" class="js-confirm" data-confirm="Close this ticket? You can reopen it later if the issue persists.">
+          <button type="submit" class="btn btn-primary">Close Ticket</button>
+        </form>
+      <% } %>
+      <% if (['Resolved', 'Closed'].includes(ticket.status)) { %>
+        <form action="/tickets/<%= ticket.id %>/reopen" method="POST" class="js-confirm" data-confirm="Reopen this ticket? QuanTech will be notified.">
+          <button type="submit" class="btn btn-secondary">Reopen Ticket</button>
+        </form>
+      <% } %>
+    </div>
+  <% } %>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-body">
+    <div class="status-timeline">
+      <% statuses.forEach(function(s, i) { %>
+        <div class="status-timeline-step <%= i < statusIndex ? 'is-complete' : (i === statusIndex ? 'is-current' : '') %>">
+          <span class="status-timeline-line"></span>
+          <span class="status-timeline-dot"><%= i < statusIndex ? '✓' : '' %></span>
+          <span class="status-timeline-label"><%= s %></span>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<div class="ticket-detail-grid">
+  <div class="flex-col gap-lg">
+    <div class="card">
+      <div class="card-header"><h3>Description</h3></div>
+      <div class="card-body">
+        <p class="conversation-message"><%= ticket.description %></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Conversation</h3></div>
+      <div class="card-body">
+        <div class="conversation-list" id="conversationList">
+          <% ticket.history.filter(function(h) { return !h.internal || isStaff; }).forEach(function(item) { %>
+            <%- include('../partials/conversation-item', { item }) %>
+          <% }) %>
+        </div>
+
+        <hr class="divider">
+
+        <form id="replyForm" action="/tickets/<%= ticket.id %>/reply" method="POST" class="reply-box">
+          <div class="form-group">
+            <label for="message"><%= isStaff ? 'Reply to client' : 'Add a reply' %></label>
+            <textarea id="message" name="message" placeholder="<%= isStaff ? 'Write a reply the client will see...' : 'Share additional details or ask a question...' %>"></textarea>
+          </div>
+          <div class="reply-box-footer">
+            <% if (isStaff) { %>
+              <label class="checkbox-row">
+                <input type="checkbox" name="internal">
+                Internal note (not visible to client)
+              </label>
+            <% } else { %>
+              <span></span>
+            <% } %>
+            <button type="submit" class="btn btn-primary">Send Reply</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-col gap-lg">
+    <div class="card">
+      <div class="card-header"><h3>Ticket Details</h3></div>
+      <div class="card-body">
+        <div class="meta-list">
+          <div class="meta-row">
+            <span class="meta-row-label">Category</span>
+            <span class="meta-row-value"><%= ticket.category %></span>
+          </div>
+
+          <% if (isStaff) { %>
+            <div class="meta-row">
+              <span class="meta-row-label">Priority</span>
+              <form action="/tickets/<%= ticket.id %>/priority" method="POST">
+                <select name="priority" class="auto-submit filter-select">
+                  <% priorities.forEach(function(p) { %>
+                    <option value="<%= p %>" <%= ticket.priority === p ? 'selected' : '' %>><%= p %></option>
+                  <% }) %>
+                </select>
+              </form>
+            </div>
+            <div class="meta-row">
+              <span class="meta-row-label">Status</span>
+              <form action="/tickets/<%= ticket.id %>/status" method="POST">
+                <select name="status" class="auto-submit filter-select">
+                  <% statuses.forEach(function(s) { %>
+                    <option value="<%= s %>" <%= ticket.status === s ? 'selected' : '' %>><%= s %></option>
+                  <% }) %>
+                </select>
+              </form>
+            </div>
+            <div class="meta-row">
+              <span class="meta-row-label">Technician</span>
+              <form action="/tickets/<%= ticket.id %>/assign" method="POST">
+                <select name="technicianId" class="auto-submit filter-select">
+                  <option value="">Unassigned</option>
+                  <% technicians.forEach(function(t) { %>
+                    <option value="<%= t.id %>" <%= ticket.assignedTechnicianId === t.id ? 'selected' : '' %>><%= t.name %></option>
+                  <% }) %>
+                </select>
+              </form>
+            </div>
+          <% } else { %>
+            <div class="meta-row">
+              <span class="meta-row-label">Assigned technician</span>
+              <span class="meta-row-value">
+                <% if (ticket.assignedTechnician) { %>
+                  <span class="assignee-row"><span class="avatar is-sm"><%= ticket.assignedTechnician.name.split(' ').map(function(n){return n[0];}).join('') %></span><%= ticket.assignedTechnician.name %></span>
+                <% } else { %>Not yet assigned<% } %>
+              </span>
+            </div>
+          <% } %>
+
+          <div class="meta-row">
+            <span class="meta-row-label">Affected service</span>
+            <span class="meta-row-value"><%= ticket.affectedService %></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-row-label">Company</span>
+            <span class="meta-row-value"><%= ticket.company %></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-row-label">Department</span>
+            <span class="meta-row-value"><%= ticket.department %></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-row-label">Contact</span>
+            <span class="meta-row-value"><%= ticket.contactName %></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-row-label">Contact email</span>
+            <span class="meta-row-value"><%= ticket.contactEmail %></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-row-label">Created</span>
+            <span class="meta-row-value"><%= new Date(ticket.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-row-label">Last updated</span>
+            <span class="meta-row-value"><%= new Date(ticket.updatedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) %></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-row-label">SLA target</span>
+            <span class="meta-row-value <%= ticket.isOverdue ? 'text-danger' : '' %>"><%= new Date(ticket.dueAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) %></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Attachments</h3></div>
+      <div class="card-body">
+        <% if (ticket.attachments.length === 0) { %>
+          <p class="text-muted">No files attached.</p>
+        <% } else { %>
+          <% ticket.attachments.forEach(function(file) { %>
+            <a href="<%= file.url %>" class="attachment-item" target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              <div>
+                <div><%= file.originalName %></div>
+                <div class="attachment-meta"><%= Math.round(file.size / 1024) %> KB</div>
+              </div>
+            </a>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/layout-end', { pageScripts: ['ticket-detail'] }) %>

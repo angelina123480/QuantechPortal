@@ -1,0 +1,110 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Create Ticket</h1>
+    <p>Submit a new IT support request to QuanTech's enterprise support team.</p>
+  </div>
+</div>
+
+<div class="ticket-form-layout">
+  <div class="card">
+    <div class="card-body">
+      <form action="/tickets" method="POST" enctype="multipart/form-data" novalidate>
+
+        <div class="form-group <%= errors && errors.title ? 'field-invalid' : '' %>">
+          <label for="title">Ticket title</label>
+          <input type="text" id="title" name="title" maxlength="150" placeholder="Brief summary of the issue" value="<%= formData.title || '' %>" required>
+          <% if (errors && errors.title) { %><div class="form-error"><%= errors.title %></div><% } %>
+        </div>
+
+        <div class="form-group <%= errors && errors.description ? 'field-invalid' : '' %>">
+          <label for="description">Detailed description</label>
+          <textarea id="description" name="description" placeholder="Describe the issue, when it started, and what you've already tried" required><%= formData.description || '' %></textarea>
+          <% if (errors && errors.description) { %><div class="form-error"><%= errors.description %></div><% } %>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group <%= errors && errors.category ? 'field-invalid' : '' %>">
+            <label for="category">Category</label>
+            <select id="category" name="category" required>
+              <option value="">Select a category&hellip;</option>
+              <% categories.forEach(function(c) { %>
+                <option value="<%= c %>" <%= formData.category === c ? 'selected' : '' %>><%= c %></option>
+              <% }) %>
+            </select>
+            <% if (errors && errors.category) { %><div class="form-error"><%= errors.category %></div><% } %>
+          </div>
+          <div class="form-group">
+            <label for="affectedService">Affected service / system</label>
+            <input type="text" id="affectedService" name="affectedService" placeholder="e.g. Core Banking Gateway v3" value="<%= formData.affectedService || '' %>">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Priority</label>
+          <div class="priority-picker">
+            <% priorities.forEach(function(p, i) { %>
+              <div class="priority-option">
+                <input type="radio" id="priority-<%= p %>" name="priority" value="<%= p %>" <%= (formData.priority === p || (!formData.priority && p === 'Medium')) ? 'checked' : '' %> required>
+                <label for="priority-<%= p %>" class="priority-option-label">
+                  <span class="dot is-<%= p.toLowerCase() %>"></span>
+                  <%= p %>
+                </label>
+              </div>
+            <% }) %>
+          </div>
+          <% if (errors && errors.priority) { %><div class="form-error"><%= errors.priority %></div><% } %>
+        </div>
+
+        <fieldset>
+          <legend>Company &amp; contact</legend>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="company">Company</label>
+              <input type="text" id="company" value="<%= formData.company || '' %>" disabled>
+              <div class="form-hint">Tickets are always filed under your organization.</div>
+            </div>
+            <div class="form-group">
+              <label for="department">Department</label>
+              <input type="text" id="department" name="department" value="<%= formData.department || '' %>">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="contactName">Contact name</label>
+              <input type="text" id="contactName" name="contactName" value="<%= formData.contactName || '' %>">
+            </div>
+            <div class="form-group <%= errors && errors.contactEmail ? 'field-invalid' : '' %>">
+              <label for="contactEmail">Contact email</label>
+              <input type="email" id="contactEmail" name="contactEmail" value="<%= formData.contactEmail || '' %>" required>
+              <% if (errors && errors.contactEmail) { %><div class="form-error"><%= errors.contactEmail %></div><% } %>
+            </div>
+            <div class="form-group">
+              <label for="contactPhone">Contact phone</label>
+              <input type="tel" id="contactPhone" name="contactPhone" value="<%= formData.contactPhone || '' %>">
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="form-group">
+          <label for="attachments">Attachments <span class="text-muted">(optional)</span></label>
+          <div class="file-drop" id="fileDrop">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p><strong>Click to upload</strong> or drag and drop<br>PDF, images, docs, spreadsheets — up to 10MB each, 5 files max</p>
+            <input type="file" id="attachments" name="attachments" multiple class="hidden-file-input">
+          </div>
+          <div class="file-list" id="fileList"></div>
+          <% if (errors && errors.attachments) { %><div class="form-error"><%= errors.attachments %></div><% } %>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <a href="/dashboard" class="btn btn-ghost">Cancel</a>
+          <button type="submit" class="btn btn-primary">Submit Ticket</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/layout-end', { pageScripts: ['create-ticket'] }) %>

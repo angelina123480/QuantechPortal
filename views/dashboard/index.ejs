@@ -1,0 +1,105 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Welcome back, <%= currentUser.name.split(' ')[0] %></h1>
+    <p><%= currentUser.company %> &middot; <%= currentUser.department %></p>
+  </div>
+  <div class="page-header-actions">
+    <a href="/tickets/new" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Create Ticket
+    </a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <a href="/tickets?status=Open" class="stat-card is-accent-info">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Open tickets</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= openTickets.length %></div>
+    <div class="stat-card-meta">Awaiting QuanTech triage</div>
+  </a>
+
+  <a href="/tickets?status=Waiting+for+Client" class="stat-card is-accent-purple">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Awaiting your response</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= awaitingResponse.length %></div>
+    <div class="stat-card-meta">QuanTech needs more information</div>
+  </a>
+
+  <a href="/tickets?status=Resolved" class="stat-card is-accent-success">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Resolved tickets</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= resolvedTickets.length %></div>
+    <div class="stat-card-meta">Resolved or closed to date</div>
+  </a>
+
+  <a href="/tickets?priority=High" class="stat-card is-accent-danger">
+    <div class="stat-card-top">
+      <span class="stat-card-label">High priority</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= highPriorityTickets.length %></div>
+    <div class="stat-card-meta">High &amp; critical, still open</div>
+  </a>
+</div>
+
+<div class="dashboard-grid">
+  <div class="flex-col gap-lg">
+    <div class="card">
+      <div class="card-header">
+        <h3>Recent Tickets</h3>
+        <a href="/tickets" class="card-link">View all</a>
+      </div>
+      <div class="card-body">
+        <% if (recentTickets.length === 0) { %>
+          <p class="text-muted">No tickets yet. <a href="/tickets/new">Create your first ticket</a>.</p>
+        <% } else { %>
+          <% recentTickets.forEach(function(ticket) { %>
+            <%- include('../partials/recent-ticket-item', { ticket }) %>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-header"><h3>Your Tickets by Priority</h3></div>
+        <div class="chart-card-body">
+          <div id="priorityChart" data-chart-title="Your tickets by priority"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Your Tickets by Category</h3></div>
+        <div class="chart-card-body">
+          <div id="categoryChart" data-chart-title="Your tickets by category"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Recent Activity</h3></div>
+    <div class="card-body">
+      <% if (recentActivity.length === 0) { %>
+        <p class="text-muted">No activity yet.</p>
+      <% } else { %>
+        <% recentActivity.forEach(function(item) { %>
+          <%- include('../partials/activity-item', { item }) %>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" data-chart-for="priorityChart"><%- JSON.stringify(priorityChart) %></script>
+<script type="application/json" data-chart-for="categoryChart"><%- JSON.stringify(categoryChart) %></script>
+
+<%- include('../partials/layout-end', { pageScripts }) %>

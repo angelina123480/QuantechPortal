@@ -1,0 +1,14 @@
+<header class="topbar">
+  <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <span class="topbar-title"><%= typeof title !== 'undefined' ? title : 'QuanTech Support Portal' %></span>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-user">
+    <div class="topbar-user-avatar"><%= currentUser.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() %></div>
+    <div class="topbar-user-meta">
+      <span class="topbar-user-name"><%= currentUser.name %></span>
+      <span class="topbar-user-role"><%= currentUser.company %></span>
+    </div>
+  </div>
+</header>

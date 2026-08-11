@@ -1,0 +1,14 @@
+</main>
+<footer class="app-footer">
+  &copy; <%= new Date().getFullYear() %> QuanTech SAL &middot; Enterprise Support Portal &middot; Prototype build
+</footer>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script src="/js/main.js"></script>
+<% if (typeof pageScripts !== 'undefined') { %>
+  <% pageScripts.forEach(function(src) { %>
+<script src="/js/<%= src %>.js"></script>
+  <% }) %>
+<% } %>
+</body>
+</html>

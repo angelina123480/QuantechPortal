@@ -1,0 +1,42 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <a href="/kb" class="card-link">&larr; Back to Knowledge Base</a>
+  </div>
+</div>
+
+<div class="kb-article-layout">
+  <div class="card">
+    <div class="card-body">
+      <span class="kb-article-category"><%= article.category %></span>
+      <h1><%= article.title %></h1>
+      <p class="text-secondary"><%= article.summary %></p>
+      <hr class="divider">
+      <div class="kb-article-body"><%= article.body %></div>
+
+      <div class="kb-tag-list">
+        <% article.tags.forEach(function(tag) { %><span class="kb-tag">#<%= tag %></span><% }) %>
+      </div>
+
+      <p class="text-muted kb-article-updated">Last updated <%= new Date(article.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) %></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Related in <%= article.category %></h3></div>
+    <div class="card-body">
+      <% if (related.length === 0) { %>
+        <p class="text-muted">No related articles yet.</p>
+      <% } else { %>
+        <% related.forEach(function(r) { %>
+          <a href="/kb/<%= r.id %>" class="kb-related-item"><%= r.title %></a>
+        <% }) %>
+      <% } %>
+      <hr class="divider">
+      <a href="/tickets/new" class="btn btn-secondary btn-block">Still need help? Create a ticket</a>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/layout-end') %>

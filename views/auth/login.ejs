@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('../partials/head') %>
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-brand-panel">
+    <div class="auth-brand-top">
+      <div class="auth-brand-mark"><%- include('../partials/logo', { size: 40 }) %></div>
+      <div>
+        <div class="auth-brand-name">QuanTech</div>
+        <div class="auth-brand-sub">Enterprise Support Portal</div>
+      </div>
+    </div>
+
+    <div class="auth-brand-mid">
+      <h1>Enterprise IT support, centralized and secured.</h1>
+      <p>Submit, track, and resolve technical service requests across cloud, cybersecurity, AI, IoT, and infrastructure — all in one portal built for QuanTech's enterprise clients.</p>
+
+      <div class="auth-feature-list">
+        <div class="auth-feature-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          <span>Role-based access with session-secured authentication</span>
+        </div>
+        <div class="auth-feature-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          <span>Real-time ticket status, priority, and SLA tracking</span>
+        </div>
+        <div class="auth-feature-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>Full audit trail across every conversation and status change</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-brand-bottom">QuanTech SAL &middot; Midis Group &middot; Est. 1995</div>
+  </div>
+
+  <div class="auth-form-panel">
+    <div class="auth-card">
+      <h2>Sign in</h2>
+      <p class="lead">Access your enterprise support workspace.</p>
+
+      <%- include('../partials/flash') %>
+      <% if (error) { %>
+        <div class="alert alert-error" role="alert">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none"/></svg>
+          <span><%= error %></span>
+        </div>
+      <% } %>
+
+      <form action="/login" method="POST" novalidate>
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" value="<%= prefillEmail %>" placeholder="you@company.com" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <div class="auth-options-row">
+          <label class="checkbox-row">
+            <input type="checkbox" name="remember">
+            Remember me
+          </label>
+          <a href="#" class="card-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+      </form>
+
+      <div class="auth-demo-box">
+        <h4>Demo accounts</h4>
+        <div class="auth-demo-row">
+          <span class="auth-demo-role">Enterprise client</span>
+          <span class="auth-demo-cred">rania.saad@abcbank.com</span>
+        </div>
+        <div class="auth-demo-row">
+          <span class="auth-demo-role">QuanTech technician</span>
+          <span class="auth-demo-cred">michael.haddad@quantech.com</span>
+        </div>
+        <div class="auth-demo-row">
+          <span class="auth-demo-role">Password (all accounts)</span>
+          <span class="auth-demo-cred"><%= demoPassword %></span>
+        </div>
+      </div>
+
+      <p class="auth-footer-note">This is a prototype environment. Do not enter real credentials.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('../partials/head') %>
+</head>
+<body>
+<div class="auth-shell error-shell">
+  <div class="auth-form-panel">
+    <div class="auth-card error-card">
+      <div class="error-mark"><%- include('../partials/logo', { size: 48 }) %></div>
+      <h2>Access denied</h2>
+      <p class="lead">Your account role doesn't have permission to view this page.</p>
+      <a href="<%= locals.currentUser ? '/dashboard' : '/login' %>" class="btn btn-primary">Return to <%= locals.currentUser ? 'Dashboard' : 'Login' %></a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

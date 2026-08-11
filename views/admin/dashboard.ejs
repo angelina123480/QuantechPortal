@@ -1,0 +1,184 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Technician Dashboard</h1>
+    <p>QuanTech-wide ticket operations across all enterprise clients.</p>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card is-accent-neutral">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Total tickets</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= stats.total %></div>
+  </div>
+  <div class="stat-card is-accent-info">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Open</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= stats.byStatus['Open'] %></div>
+  </div>
+  <div class="stat-card is-accent-warning">
+    <div class="stat-card-top">
+      <span class="stat-card-label">In progress</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= stats.byStatus['In Progress'] %></div>
+  </div>
+  <div class="stat-card is-accent-success">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Resolved</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.5l2.5 2.5L16 9.5"/><circle cx="12" cy="12" r="9"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= stats.byStatus['Resolved'] %></div>
+  </div>
+  <div class="stat-card is-accent-danger">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Critical</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= stats.byPriority['Critical'] %></div>
+  </div>
+  <div class="stat-card is-accent-danger">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Overdue</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= stats.overdueCount %></div>
+    <div class="stat-card-meta">Past SLA target</div>
+  </div>
+  <div class="stat-card is-accent-neutral">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Avg. resolution time</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= stats.avgResolutionHours !== null ? (stats.avgResolutionHours < 48 ? Math.round(stats.avgResolutionHours) + 'h' : (stats.avgResolutionHours / 24).toFixed(1) + 'd') : '—' %></div>
+  </div>
+</div>
+
+<div class="charts-grid is-triple">
+  <div class="card">
+    <div class="card-header"><h3>Tickets by Status</h3></div>
+    <div class="chart-card-body"><div id="statusChart" data-chart-title="Tickets by status"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Tickets by Priority</h3></div>
+    <div class="chart-card-body"><div id="priorityChart" data-chart-title="Tickets by priority"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Tickets by Category</h3></div>
+    <div class="chart-card-body"><div id="categoryChart" data-chart-title="Tickets by category"></div></div>
+  </div>
+</div>
+
+<% if (overdueTickets.length > 0) { %>
+<div class="card mb-lg">
+  <div class="card-header"><h3>Overdue Tickets</h3><span class="badge badge-overdue"><%= overdueTickets.length %> past SLA</span></div>
+  <div class="card-body">
+    <% overdueTickets.slice(0, 6).forEach(function(ticket) { %>
+      <%- include('../partials/recent-ticket-item', { ticket }) %>
+    <% }) %>
+  </div>
+</div>
+<% } %>
+
+<div class="section-title-row">
+  <h2>All Tickets</h2>
+</div>
+
+<div class="table-toolbar">
+  <div class="table-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" id="ticketSearch" placeholder="Search by ticket #, title, or company...">
+  </div>
+  <select id="filterStatus" class="filter-select">
+    <option value="">All statuses</option>
+    <% statuses.forEach(function(s) { %><option value="<%= s %>"><%= s %></option><% }) %>
+  </select>
+  <select id="filterPriority" class="filter-select">
+    <option value="">All priorities</option>
+    <% priorities.forEach(function(p) { %><option value="<%= p %>"><%= p %></option><% }) %>
+  </select>
+  <select id="filterCategory" class="filter-select">
+    <option value="">All categories</option>
+    <% categories.forEach(function(c) { %><option value="<%= c %>"><%= c %></option><% }) %>
+  </select>
+  <select id="filterTechnician" class="filter-select">
+    <option value="">All technicians</option>
+    <option value="__unassigned">Unassigned</option>
+    <% technicians.forEach(function(t) { %><option value="<%= t.id %>"><%= t.name %></option><% }) %>
+  </select>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table is-stackable" id="ticketsTable">
+    <thead>
+      <tr>
+        <th>Ticket #</th>
+        <th>Title</th>
+        <th>Company</th>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Technician</th>
+        <th>Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% tickets.forEach(function(ticket) { %>
+        <tr
+          data-search="<%= (ticket.ticketNumber + ' ' + ticket.title + ' ' + ticket.company).toLowerCase() %>"
+          data-status="<%= ticket.status %>"
+          data-priority="<%= ticket.priority %>"
+          data-category="<%= ticket.category %>"
+          data-technician="<%= ticket.assignedTechnicianId || '__unassigned' %>"
+        >
+          <td data-label="Ticket #">
+            <a href="/tickets/<%= ticket.id %>" class="ticket-number-cell"><%= ticket.ticketNumber %></a>
+            <% if (ticket.isOverdue) { %> <span class="badge badge-overdue">Overdue</span><% } %>
+          </td>
+          <td data-label="Title"><a href="/tickets/<%= ticket.id %>" class="ticket-title-link"><%= ticket.title %></a></td>
+          <td data-label="Company"><%= ticket.company %></td>
+          <td data-label="Priority"><%- include('../partials/priority-badge', { priority: ticket.priority }) %></td>
+          <td data-label="Status"><%- include('../partials/status-badge', { status: ticket.status }) %></td>
+          <td data-label="Technician">
+            <select class="assign-select filter-select" data-ticket-id="<%= ticket.id %>" aria-label="Assign technician for <%= ticket.ticketNumber %>">
+              <option value="">Unassigned</option>
+              <% technicians.forEach(function(t) { %>
+                <option value="<%= t.id %>" <%= ticket.assignedTechnicianId === t.id ? 'selected' : '' %>><%= t.name %></option>
+              <% }) %>
+            </select>
+          </td>
+          <td data-label="Updated"><%= new Date(ticket.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <div class="table-empty-state" id="ticketsEmptyState" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <p>No tickets match your filters.</p>
+  </div>
+</div>
+<p class="table-row-count" id="ticketsRowCount"></p>
+
+<div class="card mt-lg">
+  <div class="card-header"><h3>Recent Activity</h3></div>
+  <div class="card-body">
+    <% if (recentActivity.length === 0) { %>
+      <p class="text-muted">No activity yet.</p>
+    <% } else { %>
+      <% recentActivity.forEach(function(item) { %>
+        <%- include('../partials/activity-item', { item }) %>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+
+<script type="application/json" data-chart-for="statusChart"><%- JSON.stringify(statusChart) %></script>
+<script type="application/json" data-chart-for="priorityChart"><%- JSON.stringify(priorityChart) %></script>
+<script type="application/json" data-chart-for="categoryChart"><%- JSON.stringify(categoryChart) %></script>
+
+<%- include('../partials/layout-end', { pageScripts }) %>

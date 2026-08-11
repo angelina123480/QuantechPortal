@@ -1,0 +1,13 @@
+<a href="/tickets/<%= ticket.id %>" class="recent-ticket-item">
+  <div class="recent-ticket-main">
+    <span class="recent-ticket-title"><%= ticket.ticketNumber %> &middot; <%= ticket.title %></span>
+    <div class="recent-ticket-meta">
+      <span><%= ticket.company %></span>
+      <span>&middot;</span>
+      <span><%= new Date(ticket.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></span>
+      <% if (ticket.isOverdue) { %><span class="badge badge-overdue">Overdue</span><% } %>
+    </div>
+  </div>
+  <%- include('priority-badge', { priority: ticket.priority }) %>
+  <%- include('status-badge', { status: ticket.status }) %>
+</a>

@@ -1,0 +1,115 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Profile &amp; Settings</h1>
+    <p>Manage your account information, security, and notification preferences.</p>
+  </div>
+</div>
+
+<div class="ticket-form-layout">
+
+  <div class="card">
+    <div class="card-header"><h3>Your Information</h3></div>
+    <div class="card-body">
+      <form action="/profile" method="POST" novalidate>
+        <div class="form-row">
+          <div class="form-group <%= errors && errors.name ? 'field-invalid' : '' %>">
+            <label for="name">Full name</label>
+            <input type="text" id="name" name="name" value="<%= currentUser.name %>" required>
+            <% if (errors && errors.name) { %><div class="form-error"><%= errors.name %></div><% } %>
+          </div>
+          <div class="form-group">
+            <label for="email">Email address</label>
+            <input type="email" id="email" value="<%= currentUser.email %>" disabled>
+            <div class="form-hint">Contact QuanTech support to change your login email.</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" name="phone" value="<%= currentUser.phone %>">
+          </div>
+          <div class="form-group">
+            <label for="department">Department</label>
+            <input type="text" id="department" name="department" value="<%= currentUser.department %>">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="company">Company</label>
+            <input type="text" id="company" value="<%= currentUser.company %>" disabled>
+          </div>
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" value="<%= currentUser.title %>" disabled>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Password &amp; Security</h3></div>
+    <div class="card-body">
+      <form action="/profile/password" method="POST" novalidate>
+        <% if (errors && errors.password) { %><div class="alert alert-error"><span><%= errors.password %></span></div><% } %>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="currentPassword">Current password</label>
+            <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newPassword">New password</label>
+            <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" minlength="8" required>
+            <div class="form-hint">At least 8 characters.</div>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirm new password</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" minlength="8" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-secondary">Change Password</button>
+      </form>
+
+      <hr class="divider">
+      <div class="security-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <span>Your password is stored using bcrypt hashing and never transmitted in plain text after this form is submitted over a secured session.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Notification Preferences</h3></div>
+    <div class="card-body">
+      <form action="/profile/notifications" method="POST">
+        <div class="form-group">
+          <label class="checkbox-row">
+            <input type="checkbox" name="emailOnReply" <%= currentUser.notificationPrefs.emailOnReply ? 'checked' : '' %>>
+            Email me when someone replies to my tickets
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-row">
+            <input type="checkbox" name="emailOnStatusChange" <%= currentUser.notificationPrefs.emailOnStatusChange ? 'checked' : '' %>>
+            Email me when a ticket status changes
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-row">
+            <input type="checkbox" name="emailOnAssignment" <%= currentUser.notificationPrefs.emailOnAssignment ? 'checked' : '' %>>
+            Email me when a technician is assigned
+          </label>
+        </div>
+        <button type="submit" class="btn btn-secondary">Save Preferences</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<%- include('../partials/layout-end') %>

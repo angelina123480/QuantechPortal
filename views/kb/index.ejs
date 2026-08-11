@@ -1,0 +1,43 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Knowledge Base</h1>
+    <p>Self-service articles covering cloud, security, networking, AI, IoT, and general IT support.</p>
+  </div>
+</div>
+
+<form action="/kb" method="GET">
+  <div class="kb-search-bar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" id="kbSearch" name="q" placeholder="Search articles by keyword..." value="<%= query %>">
+    <% if (activeCategory) { %><input type="hidden" name="category" value="<%= activeCategory %>"><% } %>
+  </div>
+</form>
+
+<div class="kb-category-chips">
+  <a href="/kb<%= query ? '?q=' + encodeURIComponent(query) : '' %>" class="kb-chip <%= !activeCategory ? 'is-active' : '' %>">All categories</a>
+  <% categories.forEach(function(c) { %>
+    <a href="/kb?category=<%= encodeURIComponent(c) %><%= query ? '&q=' + encodeURIComponent(query) : '' %>" class="kb-chip <%= activeCategory === c ? 'is-active' : '' %>"><%= c %></a>
+  <% }) %>
+</div>
+
+<div class="kb-grid" id="kbGrid">
+  <% articles.forEach(function(article) { %>
+    <a href="/kb/<%= article.id %>" class="kb-article-card" data-search="<%= (article.title + ' ' + article.summary + ' ' + article.tags.join(' ')).toLowerCase() %>">
+      <span class="kb-article-category"><%= article.category %></span>
+      <h3><%= article.title %></h3>
+      <p><%= article.summary %></p>
+      <div class="kb-article-meta">
+        <span>Updated <%= new Date(article.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></span>
+      </div>
+    </a>
+  <% }) %>
+</div>
+
+<div class="kb-empty-state" id="kbEmptyState" <%= articles.length ? 'hidden' : '' %>>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  <p>No articles match your search.</p>
+</div>
+
+<%- include('../partials/layout-end', { pageScripts: ['kb'] }) %>

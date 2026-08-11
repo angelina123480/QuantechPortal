@@ -1,0 +1,30 @@
+<%
+  var isBubble = item.type === 'reply' || item.type === 'note';
+  var isStaffAuthor = !!item.isStaffAuthor;
+  var initials = item.authorName.split(' ').map(function(n) { return n[0]; }).join('').slice(0, 2).toUpperCase();
+  var timeStr = new Date(item.timestamp).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+  var systemText = '';
+  if (item.type === 'created') systemText = 'Ticket created';
+  else if (item.type === 'status_change') systemText = 'Status changed from ' + item.fromStatus + ' to ' + item.toStatus;
+  else if (item.type === 'priority_change') systemText = 'Priority changed from ' + item.fromPriority + ' to ' + item.toPriority;
+  else if (item.type === 'assigned') systemText = item.message;
+%>
+<% if (isBubble) { %>
+  <div class="conversation-item <%= isStaffAuthor ? 'is-staff' : '' %> <%= item.internal ? 'is-internal' : '' %>">
+    <div class="avatar"><%= initials %></div>
+    <div class="conversation-bubble">
+      <div class="conversation-header">
+        <span class="conversation-author"><%= item.authorName %></span>
+        <% if (item.internal) { %><span class="internal-note-tag">Internal note</span><% } %>
+        <span class="conversation-time"><%= timeStr %></span>
+      </div>
+      <div class="conversation-message"><%= item.message %></div>
+    </div>
+  </div>
+<% } else { %>
+  <div class="conversation-system">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    <span><strong><%= item.authorName %></strong> &middot; <%= systemText %> &middot; <%= timeStr %></span>
+  </div>
+<% } %>
