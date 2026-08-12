@@ -33,12 +33,6 @@ function createApp() {
   app.set('views', path.join(__dirname, '..', 'views'));
   app.disable('x-powered-by');
 
-  // TEMPORARY diagnostic route — bisecting a production-only hang on GET /.
-  // Registered before every other middleware so it proves whether the
-  // request reaches Express at all before we suspect the platform/routing
-  // layer. Remove once the real cause is found.
-  app.get('/', (req, res) => res.status(200).send('ROOT_DIAGNOSTIC_OK'));
-
   // Every response here is per-session/personalized — none of it should be
   // cached. This also matters on Vercel specifically: its edge defaults to
   // marking function responses publicly cacheable, and a publicly-cacheable
