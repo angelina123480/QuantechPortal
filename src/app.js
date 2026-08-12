@@ -52,7 +52,11 @@ function createApp() {
   app.use(morgan(isProduction ? 'combined' : 'dev'));
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
-  app.use(express.static(path.join(__dirname, '..', 'public')));
+  // index: false — every page is server-rendered EJS, there's no public/index.html.
+  // Without this, a request for exactly "/" makes express.static attempt directory-index
+  // resolution instead of a simple file-miss lookup; on Vercel's bundled read-only
+  // filesystem that specific path hung instead of failing fast, timing out the function.
+  app.use(express.static(path.join(__dirname, '..', 'public'), { index: false }));
 
   app.use(
     session({
