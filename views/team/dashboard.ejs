@@ -1,0 +1,110 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1><%= team ? team.name : 'Team Dashboard' %></h1>
+    <p><%= team ? "Team-wide ticket operations and workload." : "You don't currently lead a team." %></p>
+  </div>
+  <% if (currentUser.role === 'admin' && allTeams.length) { %>
+    <div class="page-header-actions">
+      <form method="GET" class="flex gap-sm">
+        <select name="teamId" class="filter-select auto-submit">
+          <option value="">Select a team&hellip;</option>
+          <% allTeams.forEach(function(t) { %>
+            <option value="<%= t.id %>" <%= team && team.id === t.id ? 'selected' : '' %>><%= t.name %></option>
+          <% }) %>
+        </select>
+      </form>
+    </div>
+  <% } %>
+</div>
+
+<% if (!team) { %>
+  <div class="card"><div class="card-body"><p class="text-muted">No team is assigned to you yet. Contact an administrator to be set as a team lead.</p></div></div>
+<% } else { %>
+
+<div class="stat-grid">
+  <div class="stat-card is-accent-neutral">
+    <div class="stat-card-top"><span class="stat-card-label">Total team tickets</span></div>
+    <div class="stat-card-value"><%= stats.total %></div>
+  </div>
+  <div class="stat-card is-accent-info">
+    <div class="stat-card-top"><span class="stat-card-label">Open</span></div>
+    <div class="stat-card-value"><%= stats.byStatus['Open'] %></div>
+  </div>
+  <div class="stat-card is-accent-danger">
+    <div class="stat-card-top"><span class="stat-card-label">Escalated</span></div>
+    <div class="stat-card-value"><%= stats.byStatus['Escalated'] %></div>
+  </div>
+  <div class="stat-card is-accent-danger">
+    <div class="stat-card-top"><span class="stat-card-label">Overdue</span></div>
+    <div class="stat-card-value"><%= overdueTickets.length %></div>
+    <div class="stat-card-meta">Past SLA target</div>
+  </div>
+  <div class="stat-card is-accent-success">
+    <div class="stat-card-top"><span class="stat-card-label">Avg. resolution time</span></div>
+    <div class="stat-card-value"><%= stats.avgResolutionHours !== null ? (stats.avgResolutionHours < 48 ? Math.round(stats.avgResolutionHours) + 'h' : (stats.avgResolutionHours / 24).toFixed(1) + 'd') : '—' %></div>
+  </div>
+</div>
+
+<div class="charts-grid">
+  <div class="card">
+    <div class="card-header"><h3>Team Tickets by Status</h3></div>
+    <div class="chart-card-body"><div id="statusChart" data-chart-title="Team tickets by status"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Team Tickets by Category</h3></div>
+    <div class="chart-card-body"><div id="categoryChart" data-chart-title="Team tickets by category"></div></div>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>Agent Workload</h3><a href="/tickets?team=mine" class="btn btn-secondary btn-sm">View team tickets</a></div>
+  <div class="card-body">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Agent</th><th>Title</th><th>Open tickets</th><th>Overdue</th></tr></thead>
+        <tbody>
+          <% workload.forEach(function(w) { %>
+            <tr>
+              <td><span class="assignee-row"><span class="avatar is-sm"><%= w.agent.name.split(' ').map(function(n){return n[0];}).join('') %></span><%= w.agent.name %></span></td>
+              <td><%= w.agent.title %></td>
+              <td><%= w.openCount %></td>
+              <td><%= w.overdueCount > 0 ? w.overdueCount : '—' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<% if (overdueTickets.length > 0) { %>
+<div class="card mb-lg">
+  <div class="card-header"><h3>Overdue Tickets</h3><span class="badge badge-overdue"><%= overdueTickets.length %> past SLA</span></div>
+  <div class="card-body">
+    <% overdueTickets.slice(0, 8).forEach(function(ticket) { %>
+      <%- include('../partials/recent-ticket-item', { ticket }) %>
+    <% }) %>
+  </div>
+</div>
+<% } %>
+
+<div class="card">
+  <div class="card-header"><h3>Recent Activity</h3></div>
+  <div class="card-body">
+    <% if (recentActivity.length === 0) { %>
+      <p class="text-muted">No activity yet.</p>
+    <% } else { %>
+      <% recentActivity.forEach(function(item) { %>
+        <%- include('../partials/activity-item', { item }) %>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+
+<script type="application/json" data-chart-for="statusChart"><%- JSON.stringify(statusChart) %></script>
+<script type="application/json" data-chart-for="categoryChart"><%- JSON.stringify(categoryChart) %></script>
+<% } %>
+
+<%- include('../partials/layout-end', { pageScripts }) %>

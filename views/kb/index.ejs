@@ -5,6 +5,11 @@
     <h1>Knowledge Base</h1>
     <p>Self-service articles covering cloud, security, networking, AI, IoT, and general IT support.</p>
   </div>
+  <% if (isAdmin) { %>
+    <div class="page-header-actions">
+      <a href="/kb/manage" class="btn btn-secondary">Manage Articles</a>
+    </div>
+  <% } %>
 </div>
 
 <form action="/kb" method="GET">

@@ -1,0 +1,120 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Users</h1>
+    <p>Every account across QuanTech and its enterprise clients.</p>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>Create User</h3></div>
+  <div class="card-body">
+    <% if (errors && errors.form) { %><div class="alert alert-error"><span><%= errors.form %></span></div><% } %>
+    <form action="/admin/users" method="POST" novalidate>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Full name</label>
+          <input type="text" id="name" name="name" value="<%= formData.name || '' %>" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" value="<%= formData.email || '' %>" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Temporary password</label>
+          <input type="text" id="password" name="password" minlength="8" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="role">Role</label>
+          <select id="role" name="role" required>
+            <% roles.forEach(function(r) { %><option value="<%= r %>" <%= formData.role === r ? 'selected' : '' %>><%= roleLabels[r] %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="company">Company</label>
+          <select id="company" name="company" required>
+            <% companies.forEach(function(c) { %><option value="<%= c.name %>" <%= formData.company === c.name ? 'selected' : '' %>><%= c.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="teamId">Team <span class="text-muted">(staff only)</span></label>
+          <select id="teamId" name="teamId">
+            <option value="">None</option>
+            <% teams.forEach(function(t) { %><option value="<%= t.id %>"><%= t.name %></option><% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="department">Department</label>
+          <input type="text" id="department" name="department" value="<%= formData.department || '' %>">
+        </div>
+        <div class="form-group">
+          <label for="title">Title</label>
+          <input type="text" id="title" name="title" value="<%= formData.title || '' %>">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Create User</button>
+    </form>
+  </div>
+</div>
+
+<div class="table-toolbar">
+  <form class="table-search" method="GET">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" name="q" placeholder="Search by name or email..." value="<%= query.q || '' %>">
+  </form>
+  <form method="GET">
+    <select name="role" class="filter-select auto-submit">
+      <option value="">All roles</option>
+      <% roles.forEach(function(r) { %><option value="<%= r %>" <%= query.role === r ? 'selected' : '' %>><%= roleLabels[r] %></option><% }) %>
+    </select>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table is-stackable">
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Company</th><th>Team</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+      <% users.forEach(function(u) { %>
+        <tr>
+          <td data-label="Name"><span class="assignee-row"><span class="avatar is-sm"><%= u.name.split(' ').map(function(n){return n[0];}).join('') %></span><%= u.name %></span></td>
+          <td data-label="Email"><%= u.email %></td>
+          <td data-label="Role"><span class="badge badge-neutral"><%= roleLabels[u.role] %></span></td>
+          <td data-label="Company"><%= u.company %></td>
+          <td data-label="Team"><%= (teams.find(function(t){return t.id === u.teamId;}) || {}).name || '—' %></td>
+          <td data-label="Status"><%= u.isActive ? 'Active' : 'Deactivated' %></td>
+          <td data-label="Actions">
+            <details>
+              <summary class="btn btn-secondary btn-sm">Edit</summary>
+              <form action="/admin/users/<%= u.id %>" method="POST" class="mt-sm flex-col gap-sm">
+                <input type="text" name="name" value="<%= u.name %>" placeholder="Name">
+                <select name="role">
+                  <% roles.forEach(function(r) { %><option value="<%= r %>" <%= u.role === r ? 'selected' : '' %>><%= roleLabels[r] %></option><% }) %>
+                </select>
+                <select name="teamId">
+                  <option value="">No team</option>
+                  <% teams.forEach(function(t) { %><option value="<%= t.id %>" <%= u.teamId === t.id ? 'selected' : '' %>><%= t.name %></option><% }) %>
+                </select>
+                <select name="company">
+                  <% companies.forEach(function(c) { %><option value="<%= c.name %>" <%= u.company === c.name ? 'selected' : '' %>><%= c.name %></option><% }) %>
+                </select>
+                <label class="checkbox-row"><input type="checkbox" name="isActive" <%= u.isActive ? 'checked' : '' %>> Active</label>
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+              </form>
+            </details>
+            <form action="/admin/users/<%= u.id %>/reset-password" method="POST" class="js-confirm" data-confirm="Reset this user's password?">
+              <button type="submit" class="btn btn-ghost btn-sm">Reset Password</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<p class="table-row-count"><%= users.length %> users</p>
+
+<%- include('../partials/layout-end') %>

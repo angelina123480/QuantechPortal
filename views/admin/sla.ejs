@@ -1,0 +1,63 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>SLA Configuration</h1>
+    <p>Response and resolution targets per priority, plus business hours.</p>
+  </div>
+</div>
+
+<div class="table-wrap mb-lg">
+  <table class="data-table">
+    <thead><tr><th>Priority</th><th>Response target</th><th>Resolution target</th><th>Actions</th></tr></thead>
+    <tbody>
+      <% policies.forEach(function(p) { %>
+        <tr>
+          <td><%- include('../partials/priority-badge', { priority: p.priority }) %></td>
+          <td><%= p.responseMinutes %> min</td>
+          <td><%= p.resolutionMinutes >= 60 ? (p.resolutionMinutes / 60).toFixed(1) + ' hrs' : p.resolutionMinutes + ' min' %></td>
+          <td>
+            <form action="/admin/sla/<%= p.priority %>" method="POST" class="flex gap-sm items-center">
+              <input type="number" name="responseMinutes" value="<%= p.responseMinutes %>" min="1" style="width: 90px;" title="Response minutes">
+              <input type="number" name="resolutionMinutes" value="<%= p.resolutionMinutes %>" min="1" style="width: 100px;" title="Resolution minutes">
+              <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3>Business Hours</h3></div>
+  <div class="card-body">
+    <form action="/admin/sla/business-hours" method="POST">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="timezone">Timezone</label>
+          <input type="text" id="timezone" name="timezone" value="<%= businessHours.timezone %>">
+        </div>
+        <div class="form-group">
+          <label for="startHour">Start hour (0-23)</label>
+          <input type="number" id="startHour" name="startHour" min="0" max="23" value="<%= businessHours.startHour %>">
+        </div>
+        <div class="form-group">
+          <label for="endHour">End hour (0-23)</label>
+          <input type="number" id="endHour" name="endHour" min="0" max="23" value="<%= businessHours.endHour %>">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Business days</label>
+        <div class="flex gap-sm" style="flex-wrap: wrap;">
+          <% ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(function(day) { %>
+            <label class="checkbox-row"><input type="checkbox" name="days" value="<%= day %>" <%= businessHours.days.includes(day) ? 'checked' : '' %>> <%= day %></label>
+          <% }) %>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Save Business Hours</button>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/layout-end') %>

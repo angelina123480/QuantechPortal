@@ -27,18 +27,25 @@
         <div class="form-row">
           <div class="form-group <%= errors && errors.category ? 'field-invalid' : '' %>">
             <label for="category">Category</label>
-            <select id="category" name="category" required>
+            <select id="category" name="category" required data-subcategory-map="<%= JSON.stringify(categories.map(function(c) { return { name: c.name, subcategories: c.subcategories }; })).replace(/"/g, '&quot;') %>">
               <option value="">Select a category&hellip;</option>
               <% categories.forEach(function(c) { %>
-                <option value="<%= c %>" <%= formData.category === c ? 'selected' : '' %>><%= c %></option>
+                <option value="<%= c.name %>" <%= formData.category === c.name ? 'selected' : '' %>><%= c.name %></option>
               <% }) %>
             </select>
             <% if (errors && errors.category) { %><div class="form-error"><%= errors.category %></div><% } %>
           </div>
           <div class="form-group">
-            <label for="affectedService">Affected service / system</label>
-            <input type="text" id="affectedService" name="affectedService" placeholder="e.g. Core Banking Gateway v3" value="<%= formData.affectedService || '' %>">
+            <label for="subcategoryId">Subcategory <span class="text-muted">(optional)</span></label>
+            <select id="subcategoryId" name="subcategoryId">
+              <option value="">Select a subcategory&hellip;</option>
+            </select>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label for="affectedService">Affected service / system <span class="text-muted">(optional)</span></label>
+          <input type="text" id="affectedService" name="affectedService" placeholder="e.g. Core Banking Gateway v3" value="<%= formData.affectedService || '' %>">
         </div>
 
         <div class="form-group">

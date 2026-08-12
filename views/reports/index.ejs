@@ -1,0 +1,99 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Reports</h1>
+    <p>Filter tickets by date range, company, category, priority, status, or agent, then export.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="/reports/export.csv?<%= new URLSearchParams(query).toString() %>" class="btn btn-secondary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export CSV
+    </a>
+    <a href="/reports/export.pdf?<%= new URLSearchParams(query).toString() %>" class="btn btn-secondary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export PDF
+    </a>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-body">
+    <form method="GET" class="form-row">
+      <div class="form-group">
+        <label for="dateFrom">From</label>
+        <input type="date" id="dateFrom" name="dateFrom" value="<%= query.dateFrom || '' %>">
+      </div>
+      <div class="form-group">
+        <label for="dateTo">To</label>
+        <input type="date" id="dateTo" name="dateTo" value="<%= query.dateTo || '' %>">
+      </div>
+      <div class="form-group">
+        <label for="company">Company</label>
+        <select id="company" name="company">
+          <option value="">All companies</option>
+          <% companies.forEach(function(c) { %><option value="<%= c.name %>" <%= query.company === c.name ? 'selected' : '' %>><%= c.name %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="category">Category</label>
+        <select id="category" name="category">
+          <option value="">All categories</option>
+          <% categories.forEach(function(c) { %><option value="<%= c %>" <%= query.category === c ? 'selected' : '' %>><%= c %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="priority">Priority</label>
+        <select id="priority" name="priority">
+          <option value="">All priorities</option>
+          <% priorities.forEach(function(p) { %><option value="<%= p %>" <%= query.priority === p ? 'selected' : '' %>><%= p %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          <option value="">All statuses</option>
+          <% statuses.forEach(function(s) { %><option value="<%= s %>" <%= query.status === s ? 'selected' : '' %>><%= s %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="agentId">Agent</label>
+        <select id="agentId" name="agentId">
+          <option value="">All agents</option>
+          <% agents.forEach(function(a) { %><option value="<%= a.id %>" <%= query.agentId === a.id ? 'selected' : '' %>><%= a.name %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-group flex items-end">
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card is-accent-neutral"><div class="stat-card-top"><span class="stat-card-label">Matching tickets</span></div><div class="stat-card-value"><%= stats.total %></div></div>
+  <div class="stat-card is-accent-danger"><div class="stat-card-top"><span class="stat-card-label">Overdue</span></div><div class="stat-card-value"><%= stats.overdueCount %></div></div>
+  <div class="stat-card is-accent-success"><div class="stat-card-top"><span class="stat-card-label">Avg. resolution time</span></div><div class="stat-card-value"><%= stats.avgResolutionHours !== null ? (stats.avgResolutionHours < 48 ? Math.round(stats.avgResolutionHours) + 'h' : (stats.avgResolutionHours / 24).toFixed(1) + 'd') : '—' %></div></div>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table is-stackable">
+    <thead><tr><th>Ticket #</th><th>Title</th><th>Company</th><th>Priority</th><th>Status</th><th>Agent</th><th>Created</th></tr></thead>
+    <tbody>
+      <% tickets.slice(0, 100).forEach(function(t) { %>
+        <tr>
+          <td data-label="Ticket #"><a href="/tickets/<%= t.id %>" class="ticket-number-cell"><%= t.ticketNumber %></a></td>
+          <td data-label="Title"><%= t.title %></td>
+          <td data-label="Company"><%= t.company %></td>
+          <td data-label="Priority"><%- include('../partials/priority-badge', { priority: t.priority }) %></td>
+          <td data-label="Status"><%- include('../partials/status-badge', { status: t.status }) %></td>
+          <td data-label="Agent"><%= t.assignedTechnician ? t.assignedTechnician.name : 'Unassigned' %></td>
+          <td data-label="Created"><%= new Date(t.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<p class="table-row-count"><%= tickets.length %> tickets match your filters<%= tickets.length > 100 ? ' (showing first 100 — export for the full set)' : '' %>.</p>
+
+<%- include('../partials/layout-end') %>

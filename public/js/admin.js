@@ -49,6 +49,7 @@
         'Content-Type': 'application/x-www-form-urlencoded',
         'X-Requested-With': 'fetch',
         Accept: 'application/json',
+        'X-CSRF-Token': window.QT && window.QT.csrfToken,
       },
       body: 'technicianId=' + encodeURIComponent(technicianId),
     })
@@ -146,7 +147,11 @@
 
     return fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-CSRF-Token': window.QT && window.QT.csrfToken,
+      },
       body: JSON.stringify(Object.assign({ ticketIds: ids }, body)),
     })
       .then(function (res) {

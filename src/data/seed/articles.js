@@ -130,6 +130,44 @@ To kick off a new initiative, open a Digital Transformation ticket describing th
 Each priority level has a target initial-response SLA: Critical within 4 hours, High within 24 hours, Medium within 72 hours, and Low within a week. You can track your ticket's status and full conversation history at any time from My Tickets.`,
     updatedAt: daysAgo(2),
   },
+  {
+    id: 'a9',
+    title: 'Reporting Application Bugs So They Get Fixed Faster',
+    category: 'Software & Applications',
+    tags: ['software', 'bugs', 'applications'],
+    summary: 'What to include in a bug report so QuanTech engineers can reproduce it on the first try.',
+    body: `A good bug report gets fixed faster because engineers don't have to chase you for details. Include:
+
+1. What you expected to happen, and what happened instead.
+2. The exact steps to reproduce it, starting from a clean state (e.g. a fresh page load).
+3. Screenshots or screen recordings, especially for visual/UI issues.
+4. Whether it happens every time or only sometimes, and under what conditions.
+5. Browser/app version and operating system, if relevant.
+
+If the bug affects a production system that customers or staff rely on right now, mark it High or Critical rather than Medium — reproducibility details still matter, but don't let gathering them delay opening the ticket.`,
+    updatedAt: daysAgo(5),
+  },
+  {
+    id: 'a10',
+    title: "Not Sure Which Category Fits? Start Here",
+    category: 'Other',
+    tags: ['support', 'categories', 'getting started'],
+    summary: 'A quick guide to picking the right category — and when "Other" is genuinely the right choice.',
+    body: `Picking a specific category routes your ticket directly to the specialist team best equipped to help, so it's worth a moment's thought before defaulting to "Other":
+
+- Anything about servers, cloud hosting, or backups → Cloud & Infrastructure
+- Suspicious activity, phishing, or security alerts → Cybersecurity
+- Predictive models, dashboards, or data pipelines → AI & Data Analytics
+- Connected devices or sensors → IoT
+- WiFi, VPN, or network connectivity → Network & Systems
+- Bugs or feature requests in a specific application → Software & Applications
+- Strategic/roadmap initiatives → Digital Transformation
+- Printers, hardware, or general troubleshooting → Technical Support
+- Passwords, MFA, or account provisioning → Account & Access
+
+"Other" is the right choice for billing questions, vendor questionnaires, and anything genuinely cross-cutting that doesn't map to a specific specialist team above.`,
+    updatedAt: daysAgo(1),
+  },
 ];
 
 function buildArticles() {

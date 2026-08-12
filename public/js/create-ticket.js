@@ -1,6 +1,30 @@
 (function () {
   'use strict';
 
+  var categorySelect = document.getElementById('category');
+  var subcategorySelect = document.getElementById('subcategoryId');
+  if (categorySelect && subcategorySelect) {
+    var subcategoryMap = [];
+    try {
+      subcategoryMap = JSON.parse(categorySelect.getAttribute('data-subcategory-map') || '[]');
+    } catch (e) { /* ignore malformed map, subcategory picker just stays empty */ }
+
+    function populateSubcategories() {
+      var selected = subcategoryMap.find(function (c) { return c.name === categorySelect.value; });
+      subcategorySelect.innerHTML = '<option value="">Select a subcategory&hellip;</option>';
+      if (!selected) return;
+      selected.subcategories.forEach(function (sub) {
+        var opt = document.createElement('option');
+        opt.value = sub.id;
+        opt.textContent = sub.name;
+        subcategorySelect.appendChild(opt);
+      });
+    }
+
+    categorySelect.addEventListener('change', populateSubcategories);
+    populateSubcategories();
+  }
+
   var drop = document.getElementById('fileDrop');
   var input = document.getElementById('attachments');
   var fileList = document.getElementById('fileList');

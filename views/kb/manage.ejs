@@ -1,0 +1,42 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Manage Knowledge Base</h1>
+    <p>Create, edit, publish, and remove knowledge base articles.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="/kb/new" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Article
+    </a>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table is-stackable">
+    <thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Views</th><th>Updated</th><th>Actions</th></tr></thead>
+    <tbody>
+      <% articles.forEach(function(a) { %>
+        <tr>
+          <td data-label="Title"><%= a.title %></td>
+          <td data-label="Category"><span class="badge badge-neutral"><%= a.category %></span></td>
+          <td data-label="Status"><span class="badge <%= a.status === 'published' ? 'badge-status-resolved' : 'badge-neutral' %>"><%= a.status %></span></td>
+          <td data-label="Views"><%= a.viewCount %></td>
+          <td data-label="Updated"><%= new Date(a.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></td>
+          <td data-label="Actions">
+            <a href="/kb/<%= a.id %>/edit" class="btn btn-secondary btn-sm">Edit</a>
+            <form action="/kb/<%= a.id %>/publish-toggle" method="POST" style="display:inline;">
+              <button type="submit" class="btn btn-secondary btn-sm"><%= a.status === 'published' ? 'Unpublish' : 'Publish' %></button>
+            </form>
+            <form action="/kb/<%= a.id %>/delete" method="POST" style="display:inline;" class="js-confirm" data-confirm="Delete this article?">
+              <button type="submit" class="btn btn-ghost btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/layout-end') %>

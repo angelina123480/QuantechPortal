@@ -1,8 +1,10 @@
 const ticketModel = require('../models/ticketModel');
 const userModel = require('../models/userModel');
+const categoryModel = require('../models/categoryModel');
+const slaEngine = require('../services/slaEngine');
 const { buildBarData, buildStatusDonut } = require('../utils/chartData');
 const { toCsv } = require('../utils/csv');
-const { CATEGORIES, PRIORITIES, STATUSES } = require('../config/constants');
+const { PRIORITIES, STATUSES } = require('../config/constants');
 
 async function technicianLookup(tickets) {
   const ids = tickets.map((t) => t.assignedTechnicianId).filter(Boolean);
@@ -11,8 +13,10 @@ async function technicianLookup(tickets) {
 }
 
 async function dashboard(req, res) {
+  const categories = await categoryModel.listNames();
   const tickets = await ticketModel.listVisibleTo(req.user);
-  const stats = ticketModel.computeStats(tickets);
+  await slaEngine.sweep(tickets);
+  const stats = ticketModel.computeStats(tickets, categories);
   const techniciansById = await technicianLookup(tickets);
 
   const overdueTickets = tickets
@@ -33,17 +37,17 @@ async function dashboard(req, res) {
     .slice(0, 10);
 
   res.render('admin/dashboard', {
-    title: 'Technician Dashboard',
+    title: 'Admin Dashboard',
     tickets: ticketsWithMeta,
     stats,
     overdueTickets,
     technicians,
     recentActivity,
-    categories: CATEGORIES,
+    categories,
     priorities: PRIORITIES,
     statuses: STATUSES,
     statusChart: buildStatusDonut(stats.byStatus, STATUSES),
-    categoryChart: buildBarData(stats.byCategory, CATEGORIES),
+    categoryChart: buildBarData(stats.byCategory, categories),
     priorityChart: buildBarData(stats.byPriority, PRIORITIES),
     pageScripts: ['charts', 'admin'],
   });
@@ -62,7 +66,7 @@ async function exportCsv(req, res) {
     { label: 'Ticket Number', value: (t) => t.ticketNumber },
     { label: 'Title', value: (t) => t.title },
     { label: 'Company', value: (t) => t.company },
-    { label: 'Department', value: (t) => t.department },
+    { label: 'Client Department', value: (t) => t.clientDepartment },
     { label: 'Category', value: (t) => t.category },
     { label: 'Priority', value: (t) => t.priority },
     { label: 'Status', value: (t) => t.status },

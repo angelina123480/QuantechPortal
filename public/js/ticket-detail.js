@@ -1,13 +1,20 @@
 (function () {
   'use strict';
 
-  // ---------- Auto-submit selects (status / priority / assign) ----------
-  document.querySelectorAll('select.auto-submit').forEach(function (select) {
-    select.addEventListener('change', function () {
-      var form = select.closest('form');
-      if (form) form.submit();
+  // ---------- Canned response picker ----------
+  var cannedPicker = document.getElementById('cannedResponsePicker');
+  var messageBox = document.getElementById('message');
+  if (cannedPicker && messageBox) {
+    cannedPicker.addEventListener('change', function () {
+      var option = cannedPicker.options[cannedPicker.selectedIndex];
+      var body = option ? option.getAttribute('data-body') : '';
+      if (body) {
+        messageBox.value = messageBox.value ? messageBox.value + '\n\n' + body : body;
+        messageBox.focus();
+      }
+      cannedPicker.value = '';
     });
-  });
+  }
 
   // ---------- Confirm before destructive/irreversible actions ----------
   document.querySelectorAll('.js-confirm').forEach(function (formOrBtn) {
@@ -76,15 +83,16 @@
     var submitBtn = replyForm.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
 
-    var body = 'message=' + encodeURIComponent(message);
-    if (internalCheckbox && internalCheckbox.checked) body += '&internal=on';
+    // FormData (not a hand-built urlencoded string) so any attached files
+    // and the CSRF hidden field main.js injected both ride along correctly.
+    var body = new FormData(replyForm);
 
     fetch(replyForm.getAttribute('action'), {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
         'X-Requested-With': 'fetch',
         Accept: 'application/json',
+        'X-CSRF-Token': window.QT && window.QT.csrfToken,
       },
       body: body,
     })
@@ -96,8 +104,7 @@
         var entries = data.ticket.history;
         var latest = entries[entries.length - 1];
         appendEntry(latest, !!latest.isStaffAuthor);
-        textarea.value = '';
-        if (internalCheckbox) internalCheckbox.checked = false;
+        replyForm.reset();
         if (window.QT) window.QT.toast('Reply posted.', 'success');
       })
       .catch(function () {

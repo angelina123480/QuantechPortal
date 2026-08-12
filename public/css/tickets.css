@@ -239,6 +239,36 @@
 .sla-countdown-ok { color: var(--text-muted); }
 .sla-countdown-overdue { color: var(--color-danger); }
 
+.sla-percent-value { display: flex; align-items: center; gap: 8px; }
+.sla-percent-bar {
+  flex: 1;
+  max-width: 90px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-gray-100);
+  overflow: hidden;
+}
+.sla-percent-bar-fill { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--color-success); }
+.sla-percent-bar-fill.warning { background: #F0B429; }
+.sla-percent-bar-fill.breached { background: var(--color-danger); }
+
+/* ---------- Star rating ---------- */
+.star-rating-display { font-size: 22px; letter-spacing: 2px; color: var(--color-gray-300); }
+.star-rating-display .star.is-filled { color: #F0B429; }
+
+.star-rating-input {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: 2px;
+  font-size: 28px;
+}
+.star-rating-input input { position: absolute; opacity: 0; width: 0; height: 0; }
+.star-rating-input label { color: var(--color-gray-300); cursor: pointer; line-height: 1; transition: color var(--transition-fast); }
+.star-rating-input input:checked ~ label,
+.star-rating-input label:hover,
+.star-rating-input label:hover ~ label { color: #F0B429; }
+
 @media (max-width: 1100px) {
   .ticket-detail-grid { grid-template-columns: 1fr; }
 }

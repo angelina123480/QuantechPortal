@@ -144,6 +144,51 @@
     container.appendChild(buildDataTable(container.getAttribute('data-chart-title') || 'Chart data', items));
   }
 
+  function renderLineChart(container, data) {
+    var items = data.items || [];
+    if (items.length === 0) {
+      container.appendChild(el('p', { class: 'text-muted', text: 'No data yet.' }));
+      return;
+    }
+    var width = 640;
+    var height = 200;
+    var padding = { top: 10, right: 10, bottom: 24, left: 10 };
+    var innerW = width - padding.left - padding.right;
+    var innerH = height - padding.top - padding.bottom;
+    var max = Math.max.apply(null, items.map(function (i) { return i.value; }).concat([1]));
+
+    var svg = svgEl('svg', {
+      class: 'line-chart-svg', viewBox: '0 0 ' + width + ' ' + height, preserveAspectRatio: 'none',
+      role: 'img', 'aria-label': container.getAttribute('data-chart-title') || 'Line chart',
+    });
+
+    var stepX = items.length > 1 ? innerW / (items.length - 1) : 0;
+    var points = items.map(function (item, i) {
+      var x = padding.left + i * stepX;
+      var y = padding.top + innerH - (item.value / max) * innerH;
+      return [x, y];
+    });
+
+    var linePath = points.map(function (p, i) { return (i === 0 ? 'M' : 'L') + p[0] + ' ' + p[1]; }).join(' ');
+    var areaPath = linePath + ' L' + points[points.length - 1][0] + ' ' + (padding.top + innerH) + ' L' + points[0][0] + ' ' + (padding.top + innerH) + ' Z';
+
+    svg.appendChild(svgEl('path', { d: areaPath, fill: 'var(--color-accent-light)', stroke: 'none' }));
+    svg.appendChild(svgEl('path', { d: linePath, fill: 'none', stroke: 'var(--color-accent)', 'stroke-width': 2 }));
+
+    var labelEvery = Math.ceil(items.length / 8);
+    items.forEach(function (item, i) {
+      if (i % labelEvery !== 0 && i !== items.length - 1) return;
+      var text = svgEl('text', { x: points[i][0], y: height - 6, 'text-anchor': 'middle', class: 'line-chart-axis-label' });
+      text.textContent = item.label;
+      svg.appendChild(text);
+    });
+
+    var wrap = el('div', { class: 'line-chart-wrap' });
+    wrap.appendChild(svg);
+    container.appendChild(wrap);
+    container.appendChild(buildDataTable(container.getAttribute('data-chart-title') || 'Chart data', items));
+  }
+
   function init() {
     document.querySelectorAll('script[data-chart-for]').forEach(function (script) {
       var targetId = script.getAttribute('data-chart-for');
@@ -157,6 +202,7 @@
       }
       if (data.type === 'bar') renderBarChart(target, data);
       else if (data.type === 'donut') renderDonutChart(target, data);
+      else if (data.type === 'line') renderLineChart(target, data);
     });
   }
 

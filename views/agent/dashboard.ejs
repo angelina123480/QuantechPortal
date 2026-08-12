@@ -1,0 +1,82 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Welcome back, <%= currentUser.name.split(' ')[0] %></h1>
+    <p>Your assigned tickets and workload across QuanTech's enterprise clients.</p>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <a href="/tickets?technician=me" class="stat-card is-accent-neutral">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Open assigned tickets</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= openTickets.length %></div>
+  </a>
+  <a href="/tickets?technician=me" class="stat-card is-accent-danger">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Overdue</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= overdueTickets.length %></div>
+    <div class="stat-card-meta">Past SLA target</div>
+  </a>
+  <div class="stat-card is-accent-warning">
+    <div class="stat-card-top">
+      <span class="stat-card-label">High priority open</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= stats.highPriorityOpenCount %></div>
+  </div>
+  <div class="stat-card is-accent-success">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Avg. resolution time</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= stats.avgResolutionHours !== null ? (stats.avgResolutionHours < 48 ? Math.round(stats.avgResolutionHours) + 'h' : (stats.avgResolutionHours / 24).toFixed(1) + 'd') : '—' %></div>
+  </div>
+</div>
+
+<div class="charts-grid">
+  <div class="card">
+    <div class="card-header"><h3>My Tickets by Priority</h3></div>
+    <div class="chart-card-body"><div id="priorityChart" data-chart-title="My tickets by priority"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>My Tickets by Category</h3></div>
+    <div class="chart-card-body"><div id="categoryChart" data-chart-title="My tickets by category"></div></div>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>Recent Assigned Tickets</h3><a href="/tickets?technician=me" class="btn btn-secondary btn-sm">View all</a></div>
+  <div class="card-body">
+    <% if (recentTickets.length === 0) { %>
+      <p class="text-muted">No tickets assigned yet.</p>
+    <% } else { %>
+      <% recentTickets.forEach(function(ticket) { %>
+        <%- include('../partials/recent-ticket-item', { ticket }) %>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3>Recent Activity</h3></div>
+  <div class="card-body">
+    <% if (recentActivity.length === 0) { %>
+      <p class="text-muted">No activity yet.</p>
+    <% } else { %>
+      <% recentActivity.forEach(function(item) { %>
+        <%- include('../partials/activity-item', { item }) %>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+
+<script type="application/json" data-chart-for="priorityChart"><%- JSON.stringify(priorityChart) %></script>
+<script type="application/json" data-chart-for="categoryChart"><%- JSON.stringify(categoryChart) %></script>
+
+<%- include('../partials/layout-end', { pageScripts }) %>

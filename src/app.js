@@ -7,6 +7,8 @@ const morgan = require('morgan');
 
 const pool = require('./data/db');
 const { attachUser } = require('./middleware/auth');
+const { ensureCsrfToken, verifyCsrfToken } = require('./middleware/csrf');
+const { generalLimiter } = require('./middleware/rateLimit');
 const { consumeFlash } = require('./utils/flash');
 
 const authRoutes = require('./routes/authRoutes');
@@ -15,6 +17,13 @@ const ticketRoutes = require('./routes/ticketRoutes');
 const kbRoutes = require('./routes/kbRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const agentRoutes = require('./routes/agentRoutes');
+const teamRoutes = require('./routes/teamRoutes');
+const cannedResponseRoutes = require('./routes/cannedResponseRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const escalationRoutes = require('./routes/escalationRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 function createApp() {
   const app = express();
@@ -61,7 +70,10 @@ function createApp() {
     })
   );
 
+  app.use(generalLimiter);
   app.use(attachUser);
+  app.use(ensureCsrfToken);
+  app.use(verifyCsrfToken);
   app.use((req, res, next) => {
     res.locals.flash = consumeFlash(req);
     res.locals.currentPath = req.path;
@@ -76,6 +88,13 @@ function createApp() {
   app.use('/kb', kbRoutes);
   app.use('/profile', profileRoutes);
   app.use('/admin', adminRoutes);
+  app.use('/agent', agentRoutes);
+  app.use('/team', teamRoutes);
+  app.use('/canned-responses', cannedResponseRoutes);
+  app.use('/notifications', notificationRoutes);
+  app.use('/escalations', escalationRoutes);
+  app.use('/reports', reportRoutes);
+  app.use('/analytics', analyticsRoutes);
 
   app.use((req, res) => {
     res.status(404).render('errors/404', { title: 'Page not found' });

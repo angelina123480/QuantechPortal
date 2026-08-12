@@ -38,8 +38,46 @@
         </form>
       <% } %>
     </div>
+  <% } else { %>
+    <div class="page-header-actions">
+      <% if (!['Escalated', 'Resolved', 'Closed'].includes(ticket.status)) { %>
+        <form action="/tickets/<%= ticket.id %>/escalate" method="POST" class="js-confirm" data-confirm="Escalate this ticket to the team leader?">
+          <button type="submit" class="btn btn-secondary">Escalate</button>
+        </form>
+      <% } %>
+      <button type="button" class="btn btn-ghost" data-modal-target="linkTicketModal">Link / Merge</button>
+    </div>
   <% } %>
 </div>
+
+<% if (isStaff) { %>
+<div class="modal-overlay" id="linkTicketModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Link or merge a ticket</h3>
+      <button type="button" class="modal-close" data-modal-close aria-label="Close">&times;</button>
+    </div>
+    <form action="/tickets/<%= ticket.id %>/link" method="POST" class="modal-body flex-col gap-md">
+      <div class="form-group">
+        <label for="ticketNumber">Other ticket number</label>
+        <input type="text" id="ticketNumber" name="ticketNumber" placeholder="e.g. QNT-2026-00123" required>
+      </div>
+      <div class="form-group">
+        <label for="linkType">Relationship</label>
+        <select id="linkType" name="linkType">
+          <option value="related">Related</option>
+          <option value="duplicate">Duplicate (closes this ticket)</option>
+          <option value="parent">Parent / larger issue</option>
+        </select>
+      </div>
+      <div class="flex justify-between items-center">
+        <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save link</button>
+      </div>
+    </form>
+  </div>
+</div>
+<% } %>
 
 <div class="card mb-lg">
   <div class="card-body">
@@ -75,10 +113,25 @@
 
         <hr class="divider">
 
-        <form id="replyForm" action="/tickets/<%= ticket.id %>/reply" method="POST" class="reply-box">
+        <form id="replyForm" action="/tickets/<%= ticket.id %>/reply" method="POST" enctype="multipart/form-data" class="reply-box">
+          <% if (isStaff && cannedResponses.length) { %>
+            <div class="form-group">
+              <label for="cannedResponsePicker">Insert canned response <span class="text-muted">(optional)</span></label>
+              <select id="cannedResponsePicker" class="filter-select">
+                <option value="">Select a canned response&hellip;</option>
+                <% cannedResponses.forEach(function(cr) { %>
+                  <option value="<%= cr.id %>" data-body="<%= cr.body.replace(/"/g, '&quot;') %>"><%= cr.title %></option>
+                <% }) %>
+              </select>
+            </div>
+          <% } %>
           <div class="form-group">
             <label for="message"><%= isStaff ? 'Reply to client' : 'Add a reply' %></label>
             <textarea id="message" name="message" placeholder="<%= isStaff ? 'Write a reply the client will see...' : 'Share additional details or ask a question...' %>"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="replyAttachments">Attach files <span class="text-muted">(optional)</span></label>
+            <input type="file" id="replyAttachments" name="attachments" multiple>
           </div>
           <div class="reply-box-footer">
             <% if (isStaff) { %>
@@ -159,7 +212,7 @@
           </div>
           <div class="meta-row">
             <span class="meta-row-label">Department</span>
-            <span class="meta-row-value"><%= ticket.department %></span>
+            <span class="meta-row-value"><%= ticket.clientDepartment %></span>
           </div>
           <div class="meta-row">
             <span class="meta-row-label">Contact</span>
@@ -186,6 +239,21 @@
               <% } %>
             </span>
           </div>
+          <div class="meta-row">
+            <span class="meta-row-label">Response SLA</span>
+            <span class="meta-row-value">
+              <span class="badge <%= slaState.responseStatus === 'breached' ? 'badge-overdue' : (slaState.responseStatus === 'met' ? 'badge-status-resolved' : 'badge-neutral') %>">
+                <%= slaState.responseStatus === 'met' ? 'Met' : slaState.responseStatus === 'breached' ? 'Breached' : 'Pending' %>
+              </span>
+            </span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-row-label">SLA time used</span>
+            <span class="meta-row-value sla-percent-value">
+              <span class="sla-percent-bar"><span class="sla-percent-bar-fill <%= slaState.resolutionStatus %>" style="width: <%= slaState.resolutionPercentUsed %>%"></span></span>
+              <%= slaState.resolutionPercentUsed %>%
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -193,10 +261,11 @@
     <div class="card">
       <div class="card-header"><h3>Attachments</h3></div>
       <div class="card-body">
-        <% if (ticket.attachments.length === 0) { %>
+        <% var visibleAttachments = ticket.attachments.filter(function(f) { return !f.internal || isStaff; }); %>
+        <% if (visibleAttachments.length === 0) { %>
           <p class="text-muted">No files attached.</p>
         <% } else { %>
-          <% ticket.attachments.forEach(function(file) { %>
+          <% visibleAttachments.forEach(function(file) { %>
             <a href="<%= file.url %>" class="attachment-item" target="_blank" rel="noopener noreferrer">
               <% if (file.mimeType && file.mimeType.startsWith('image/')) { %>
                 <img src="<%= file.url %>" alt="" class="attachment-thumb">
@@ -204,7 +273,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
               <% } %>
               <div>
-                <div><%= file.originalName %></div>
+                <div><%= file.originalName %><% if (file.internal) { %> <span class="internal-note-tag">Internal</span><% } %></div>
                 <div class="attachment-meta"><%= Math.round(file.size / 1024) %> KB</div>
               </div>
             </a>
@@ -212,6 +281,52 @@
         <% } %>
       </div>
     </div>
+
+    <% if (ticket.linkedTickets && ticket.linkedTickets.length > 0) { %>
+    <div class="card">
+      <div class="card-header"><h3>Linked Tickets</h3></div>
+      <div class="card-body">
+        <% ticket.linkedTickets.forEach(function(l) { %>
+          <a href="/tickets/<%= l.ticket.id %>" class="recent-ticket-item">
+            <div class="recent-ticket-main">
+              <span class="recent-ticket-title"><%= l.ticket.ticketNumber %> &middot; <%= l.ticket.title %></span>
+              <div class="recent-ticket-meta"><span class="badge badge-neutral"><%= l.linkType %></span></div>
+            </div>
+            <%- include('../partials/status-badge', { status: l.ticket.status }) %>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (!isStaff && ['Resolved', 'Closed'].includes(ticket.status)) { %>
+    <div class="card">
+      <div class="card-header"><h3>Rate This Support Experience</h3></div>
+      <div class="card-body">
+        <% if (ticket.rating) { %>
+          <div class="star-rating-display">
+            <% for (var s = 1; s <= 5; s++) { %><span class="star <%= s <= ticket.rating.stars ? 'is-filled' : '' %>">&#9733;</span><% } %>
+          </div>
+          <% if (ticket.rating.feedback) { %><p class="text-muted mt-sm">&ldquo;<%= ticket.rating.feedback %>&rdquo;</p><% } %>
+          <p class="form-hint">Thanks for your feedback!</p>
+        <% } else { %>
+          <form action="/tickets/<%= ticket.id %>/rating" method="POST" id="ratingForm">
+            <div class="star-rating-input" id="starRatingInput">
+              <% for (var s = 5; s >= 1; s--) { %>
+                <input type="radio" id="star<%= s %>" name="stars" value="<%= s %>" <%= s === 5 ? 'required' : '' %>>
+                <label for="star<%= s %>" title="<%= s %> stars">&#9733;</label>
+              <% } %>
+            </div>
+            <div class="form-group mt-sm">
+              <label for="feedback">Feedback <span class="text-muted">(optional)</span></label>
+              <textarea id="feedback" name="feedback" placeholder="How did we do?"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Rating</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+    <% } %>
   </div>
 </div>
 

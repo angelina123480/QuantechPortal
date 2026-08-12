@@ -1,0 +1,41 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Roles &amp; Permissions</h1>
+    <p>Toggle which optional capabilities each role has, on top of their fixed role tier. Administrators always have full access.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form action="/admin/permissions" method="POST">
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Permission</th>
+              <% roles.forEach(function(role) { %><th><%= role === 'team_leader' ? 'Team Leader' : 'Support Agent' %></th><% }) %>
+            </tr>
+          </thead>
+          <tbody>
+            <% permissions.forEach(function(p) { %>
+              <tr>
+                <td>
+                  <strong><%= p.label %></strong>
+                  <div class="text-muted" style="font-size: 12px;"><%= p.description %></div>
+                </td>
+                <% roles.forEach(function(role) { %>
+                  <td><label class="checkbox-row"><input type="checkbox" name="<%= role %>__<%= p.key %>" <%= isGranted(role, p.key) ? 'checked' : '' %>></label></td>
+                <% }) %>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <button type="submit" class="btn btn-primary mt-lg">Save Permissions</button>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/layout-end') %>

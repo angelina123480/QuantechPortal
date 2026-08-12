@@ -1,0 +1,51 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Escalations</h1>
+    <p><%= team ? team.name + ' — tickets escalated to your team.' : "You don't currently have a team." %></p>
+  </div>
+  <div class="page-header-actions">
+    <% if (allTeams.length) { %>
+      <form method="GET" class="flex gap-sm">
+        <select name="teamId" class="filter-select auto-submit">
+          <option value="">Select a team&hellip;</option>
+          <% allTeams.forEach(function(t) { %><option value="<%= t.id %>" <%= team && team.id === t.id ? 'selected' : '' %>><%= t.name %></option><% }) %>
+        </select>
+      </form>
+    <% } %>
+    <a href="?all=1" class="btn btn-secondary <%= showAll ? 'is-active' : '' %>">Show resolved too</a>
+  </div>
+</div>
+
+<% if (!team) { %>
+  <div class="card"><div class="card-body"><p class="text-muted">No team to show escalations for yet.</p></div></div>
+<% } else if (items.length === 0) { %>
+  <div class="card"><div class="card-body"><p class="text-muted">No escalations right now — nice work.</p></div></div>
+<% } else { %>
+<div class="card">
+  <div class="card-body">
+    <% items.forEach(function(item) { %>
+      <div class="recent-ticket-item">
+        <div class="recent-ticket-main">
+          <span class="recent-ticket-title"><a href="/tickets/<%= item.ticket.id %>"><%= item.ticket.ticketNumber %> &middot; <%= item.ticket.title %></a></span>
+          <div class="recent-ticket-meta">
+            <span><%= item.reason === 'manual' ? 'Escalated by ' + (item.escalatedByUser ? item.escalatedByUser.name : 'staff') : 'Auto-escalated: ' + item.reason.replace(/_/g, ' ') %></span>
+            <span>&middot;</span>
+            <span><%= new Date(item.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) %></span>
+            <% if (item.resolvedAt) { %><span class="badge badge-status-resolved">Resolved</span><% } %>
+          </div>
+        </div>
+        <%- include('../partials/priority-badge', { priority: item.ticket.priority }) %>
+        <% if (!item.resolvedAt) { %>
+          <form action="/escalations/<%= item.id %>/resolve" method="POST">
+            <button type="submit" class="btn btn-secondary btn-sm">Mark Resolved</button>
+          </form>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<% } %>
+
+<%- include('../partials/layout-end') %>

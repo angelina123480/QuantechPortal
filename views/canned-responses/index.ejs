@@ -1,0 +1,78 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Canned Responses</h1>
+    <p>Predefined replies your team can insert into ticket conversations with one click.</p>
+  </div>
+</div>
+
+<div class="ticket-form-layout">
+  <div class="card mb-lg">
+    <div class="card-header"><h3>New Canned Response</h3></div>
+    <div class="card-body">
+      <% if (errors && errors.form) { %><div class="alert alert-error"><span><%= errors.form %></span></div><% } %>
+      <form action="/canned-responses" method="POST" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" placeholder="e.g. Password Reset Instructions" value="<%= formData.title || '' %>" required>
+          </div>
+          <div class="form-group">
+            <label for="category">Category <span class="text-muted">(optional)</span></label>
+            <input type="text" id="category" name="category" placeholder="e.g. Account & Access" value="<%= formData.category || '' %>">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="body">Response text</label>
+          <textarea id="body" name="body" placeholder="What should this insert into the reply box?" required><%= formData.body || '' %></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>All Responses (<%= responses.length %>)</h3></div>
+    <div class="card-body">
+      <% if (responses.length === 0) { %>
+        <p class="text-muted">No canned responses yet.</p>
+      <% } %>
+      <% responses.forEach(function(cr) { %>
+        <div class="canned-response-item">
+          <details>
+            <summary>
+              <strong><%= cr.title %></strong>
+              <% if (cr.category) { %><span class="badge badge-neutral"><%= cr.category %></span><% } %>
+              <span class="text-muted">by <%= cr.authorName %></span>
+            </summary>
+            <form action="/canned-responses/<%= cr.id %>" method="POST" class="mt-sm">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="title-<%= cr.id %>">Title</label>
+                  <input type="text" id="title-<%= cr.id %>" name="title" value="<%= cr.title %>" required>
+                </div>
+                <div class="form-group">
+                  <label for="category-<%= cr.id %>">Category</label>
+                  <input type="text" id="category-<%= cr.id %>" name="category" value="<%= cr.category || '' %>">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="body-<%= cr.id %>">Response text</label>
+                <textarea id="body-<%= cr.id %>" name="body" required><%= cr.body %></textarea>
+              </div>
+              <div class="flex gap-sm">
+                <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+              </div>
+            </form>
+            <form action="/canned-responses/<%= cr.id %>/delete" method="POST" class="js-confirm mt-sm" data-confirm="Delete this canned response?">
+              <button type="submit" class="btn btn-ghost btn-sm">Delete</button>
+            </form>
+          </details>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/layout-end') %>

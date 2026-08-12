@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('../partials/head') %>
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-brand-panel">
+    <div class="auth-brand-top">
+      <div class="auth-brand-mark"><%- include('../partials/logo', { size: 40 }) %></div>
+      <div>
+        <div class="auth-brand-name">QuanTech</div>
+        <div class="auth-brand-sub">Enterprise Support Portal</div>
+      </div>
+    </div>
+    <div class="auth-brand-mid">
+      <h1>Two-factor verification.</h1>
+      <p>Enter the 6-digit code from your authenticator app to finish signing in.</p>
+    </div>
+    <div class="auth-brand-bottom">QuanTech SAL &middot; Midis Group &middot; Est. 1995</div>
+  </div>
+
+  <div class="auth-form-panel">
+    <div class="auth-card">
+      <h2>Verify your identity</h2>
+
+      <% if (error) { %>
+        <div class="alert alert-error" role="alert">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none"/></svg>
+          <span><%= error %></span>
+        </div>
+      <% } %>
+
+      <form action="/login/verify-2fa" method="POST" novalidate>
+        <div class="form-group">
+          <label for="code">Authentication code</label>
+          <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="123456" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Verify &amp; sign in</button>
+      </form>
+      <p class="auth-footer-note"><a href="/login" class="card-link">Cancel and sign in as someone else</a></p>
+    </div>
+  </div>
+</div>
+<script src="/js/main.js"></script>
+</body>
+</html>

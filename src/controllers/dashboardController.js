@@ -1,15 +1,18 @@
 const ticketModel = require('../models/ticketModel');
 const userModel = require('../models/userModel');
+const categoryModel = require('../models/categoryModel');
 const { buildBarData, buildPriorityDonut } = require('../utils/chartData');
-const { CATEGORIES, PRIORITIES } = require('../config/constants');
+const { dashboardPathForRole } = require('../utils/roleRouting');
+const { PRIORITIES } = require('../config/constants');
 
 async function index(req, res) {
   if (userModel.isStaff(req.user)) {
-    return res.redirect('/admin');
+    return res.redirect(dashboardPathForRole(req.user.role));
   }
 
+  const categories = await categoryModel.listNames();
   const tickets = await ticketModel.listVisibleTo(req.user);
-  const stats = ticketModel.computeStats(tickets);
+  const stats = ticketModel.computeStats(tickets, categories);
   const openTickets = tickets.filter((t) => t.status === 'Open');
   const awaitingResponse = tickets.filter((t) => t.status === 'Waiting for Client');
   const resolvedTickets = tickets.filter((t) => ['Resolved', 'Closed'].includes(t.status));
@@ -37,7 +40,7 @@ async function index(req, res) {
     recentTickets,
     recentActivity,
     priorityChart: buildPriorityDonut(stats.byPriority, PRIORITIES),
-    categoryChart: buildBarData(stats.byCategory, CATEGORIES),
+    categoryChart: buildBarData(stats.byCategory, categories),
     pageScripts: ['charts'],
   });
 }

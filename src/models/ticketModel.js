@@ -4,7 +4,6 @@ const userModel = require('./userModel');
 const {
   STATUSES,
   OPEN_STATUSES,
-  CATEGORIES,
   PRIORITIES,
   SLA_HOURS_BY_PRIORITY,
 } = require('../config/constants');
@@ -16,21 +15,24 @@ function mapTicketRow(row) {
     title: row.title,
     description: row.description,
     category: row.category,
+    subcategoryId: row.subcategory_id,
     priority: row.priority,
     status: row.status,
     affectedService: row.affected_service,
     company: row.company,
-    department: row.department,
+    clientDepartment: row.client_department,
     contactName: row.contact_name,
     contactEmail: row.contact_email,
     contactPhone: row.contact_phone,
     clientUserId: row.client_user_id,
     assignedTechnicianId: row.assigned_technician_id,
+    teamId: row.team_id,
     dueAt: row.due_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     resolvedAt: row.resolved_at,
     closedAt: row.closed_at,
+    firstResponseAt: row.first_response_at,
     attachments: [],
     history: [],
   };
@@ -61,6 +63,8 @@ function mapAttachmentRow(row) {
     mimeType: row.mime_type,
     uploadedAt: row.uploaded_at,
     url: row.url,
+    uploadedBy: row.uploaded_by,
+    internal: row.internal,
   };
 }
 
@@ -107,13 +111,7 @@ function isOverdue(ticket) {
   return Date.now() > new Date(ticket.dueAt).getTime();
 }
 
-/**
- * Returns tickets visible to `user`, optionally filtered. History is always
- * populated (dashboards flatten it for the activity feed); attachments are
- * not, since no list view needs them — only ticket detail does, via findById.
- * filters: { status, priority, category, search, assignedTechnicianId, company, overdueOnly, unassignedOnly }
- */
-async function listVisibleTo(user, filters = {}) {
+function buildFilterClauses(user, filters) {
   const clauses = [];
   const params = [];
 
@@ -122,9 +120,7 @@ async function listVisibleTo(user, filters = {}) {
     clauses.push(sql.replace('?', `$${params.length}`));
   }
 
-  if (userModel.isStaff(user)) {
-    // no company restriction
-  } else {
+  if (!userModel.isStaff(user)) {
     addClause('company = ?', user.company);
   }
 
@@ -132,12 +128,15 @@ async function listVisibleTo(user, filters = {}) {
   if (filters.priority) addClause('priority = ?', filters.priority);
   if (filters.category) addClause('category = ?', filters.category);
   if (filters.company) addClause('company = ?', filters.company);
+  if (filters.teamId) addClause('team_id = ?', filters.teamId);
   if (filters.assignedTechnicianId) addClause('assigned_technician_id = ?', filters.assignedTechnicianId);
   if (filters.unassignedOnly) clauses.push('assigned_technician_id IS NULL');
   if (filters.overdueOnly) {
     addClause('status = ANY(?)', OPEN_STATUSES);
     clauses.push('due_at < now()');
   }
+  if (filters.dateFrom) addClause('created_at >= ?', filters.dateFrom);
+  if (filters.dateTo) addClause('created_at <= ?', filters.dateTo);
   if (filters.search) {
     const q = `%${filters.search.trim().toLowerCase()}%`;
     params.push(q);
@@ -145,7 +144,35 @@ async function listVisibleTo(user, filters = {}) {
     clauses.push(`(lower(ticket_number) LIKE ${p} OR lower(title) LIKE ${p} OR lower(description) LIKE ${p} OR lower(company) LIKE ${p})`);
   }
 
-  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  return { where: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '', params };
+}
+
+/**
+ * Returns tickets visible to `user`, optionally filtered. History is always
+ * populated (dashboards flatten it for the activity feed); attachments are
+ * not, since no list view needs them — only ticket detail does, via findById.
+ * filters: { status, priority, category, search, assignedTechnicianId, company,
+ *   teamId, overdueOnly, unassignedOnly, dateFrom, dateTo, page, pageSize }
+ * When filters.page is set, returns { tickets, total, page, pageSize } instead
+ * of a bare array.
+ */
+async function listVisibleTo(user, filters = {}) {
+  const { where, params } = buildFilterClauses(user, filters);
+
+  if (filters.page) {
+    const pageSize = filters.pageSize || 25;
+    const page = Math.max(1, filters.page);
+    const countRes = await pool.query(`SELECT count(*) AS n FROM tickets ${where}`, params);
+    const total = Number(countRes.rows[0].n);
+    const pagedParams = [...params, pageSize, (page - 1) * pageSize];
+    const res = await pool.query(
+      `SELECT * FROM tickets ${where} ORDER BY updated_at DESC LIMIT $${pagedParams.length - 1} OFFSET $${pagedParams.length}`,
+      pagedParams
+    );
+    const tickets = await attachHistoryAndAttachments(res.rows.map(mapTicketRow));
+    return { tickets, total, page, pageSize };
+  }
+
   const res = await pool.query(`SELECT * FROM tickets ${where} ORDER BY updated_at DESC`, params);
   const tickets = res.rows.map(mapTicketRow);
   return attachHistoryAndAttachments(tickets);
@@ -157,25 +184,30 @@ async function nextTicketNumber() {
   return `QNT-${year}-${String(res.rows[0].n).padStart(5, '0')}`;
 }
 
+/**
+ * data.category is trusted here (validated by the controller against
+ * categoryModel.list()); category/subcategory/team resolution against the
+ * DB-backed catalog happens above this layer.
+ */
 async function create(data, clientUser, attachments = []) {
   const id = uuidv4();
   const now = new Date();
   const priority = PRIORITIES.includes(data.priority) ? data.priority : 'Medium';
-  const category = CATEGORIES.includes(data.category) ? data.category : 'Other';
+  const category = data.category || 'Other';
   const ticketNumber = await nextTicketNumber();
   const dueAt = new Date(now.getTime() + SLA_HOURS_BY_PRIORITY[priority] * 60 * 60 * 1000);
 
   await pool.query(
     `INSERT INTO tickets (
-       id, ticket_number, title, description, category, priority, status,
-       affected_service, company, department, contact_name, contact_email, contact_phone,
-       client_user_id, assigned_technician_id, due_at, created_at, updated_at
-     ) VALUES ($1,$2,$3,$4,$5,$6,'Open',$7,$8,$9,$10,$11,$12,$13,NULL,$14,$15,$15)`,
+       id, ticket_number, title, description, category, subcategory_id, priority, status,
+       affected_service, company, client_department, contact_name, contact_email, contact_phone,
+       client_user_id, assigned_technician_id, team_id, due_at, created_at, updated_at
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,'Open',$8,$9,$10,$11,$12,$13,$14,NULL,$15,$16,$17,$17)`,
     [
-      id, ticketNumber, data.title, data.description, category, priority,
-      data.affectedService || category, clientUser.company, data.department || clientUser.department,
+      id, ticketNumber, data.title, data.description, category, data.subcategoryId || null, priority,
+      data.affectedService || category, clientUser.company, data.clientDepartment || clientUser.department,
       data.contactName || clientUser.name, data.contactEmail || clientUser.email, data.contactPhone || clientUser.phone,
-      clientUser.id, dueAt, now,
+      clientUser.id, data.teamId || null, dueAt, now,
     ]
   );
 
@@ -189,9 +221,9 @@ async function create(data, clientUser, attachments = []) {
   if (attachments.length > 0) {
     for (const file of attachments) {
       await pool.query(
-        `INSERT INTO attachments (filename, ticket_id, original_name, size, mime_type, url, uploaded_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [file.filename, id, file.originalName, file.size, file.mimeType, file.url, file.uploadedAt]
+        `INSERT INTO attachments (filename, ticket_id, original_name, size, mime_type, url, uploaded_at, uploaded_by, internal)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,false)`,
+        [file.filename, id, file.originalName, file.size, file.mimeType, file.url, file.uploadedAt, clientUser.id]
       );
     }
   }
@@ -231,10 +263,27 @@ async function insertHistory(ticket, entry) {
   return record;
 }
 
-async function addReply(ticket, author, message, { internal = false } = {}) {
+async function addReply(ticket, author, message, { internal = false, attachments = [] } = {}) {
   await insertHistory(ticket, { type: internal ? 'note' : 'reply', author, message, internal });
   ticket.updatedAt = new Date();
-  await pool.query('UPDATE tickets SET updated_at = $1 WHERE id = $2', [ticket.updatedAt, ticket.id]);
+
+  const isFirstAgentResponse = !internal && userModel.isStaff(author) && !ticket.firstResponseAt;
+  if (isFirstAgentResponse) ticket.firstResponseAt = ticket.updatedAt;
+
+  await pool.query(
+    'UPDATE tickets SET updated_at = $1, first_response_at = COALESCE(first_response_at, $2) WHERE id = $3',
+    [ticket.updatedAt, isFirstAgentResponse ? ticket.updatedAt : null, ticket.id]
+  );
+
+  for (const file of attachments) {
+    await pool.query(
+      `INSERT INTO attachments (filename, ticket_id, original_name, size, mime_type, url, uploaded_at, uploaded_by, internal)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [file.filename, ticket.id, file.originalName, file.size, file.mimeType, file.url, file.uploadedAt, author.id, internal]
+    );
+    ticket.attachments.push({ ...file, uploadedBy: author.id, internal });
+  }
+
   return ticket;
 }
 
@@ -301,6 +350,18 @@ async function assignTechnician(ticket, author, technicianId) {
   return ticket;
 }
 
+async function assignTeam(ticket, author, teamId) {
+  ticket.teamId = teamId || null;
+  ticket.updatedAt = new Date();
+  await pool.query('UPDATE tickets SET team_id = $1, updated_at = $2 WHERE id = $3', [ticket.teamId, ticket.updatedAt, ticket.id]);
+  await insertHistory(ticket, { type: 'assigned', author, message: teamId ? 'Routed to a new team' : 'Team unassigned' });
+  return ticket;
+}
+
+async function escalate(ticket, author, note) {
+  return changeStatus(ticket, author, 'Escalated');
+}
+
 async function closeTicket(ticket, author) {
   if (ticket.status !== 'Resolved') return ticket;
   return changeStatus(ticket, author, 'Closed');
@@ -311,12 +372,12 @@ async function reopenTicket(ticket, author) {
   return changeStatus(ticket, author, 'Open');
 }
 
-function computeStats(tickets) {
+function computeStats(tickets, categories = []) {
   const stats = {
     total: tickets.length,
     byStatus: Object.fromEntries(STATUSES.map((s) => [s, 0])),
     byPriority: Object.fromEntries(PRIORITIES.map((p) => [p, 0])),
-    byCategory: Object.fromEntries(CATEGORIES.map((c) => [c, 0])),
+    byCategory: Object.fromEntries(categories.map((c) => [c, 0])),
     overdueCount: 0,
     highPriorityOpenCount: 0,
     avgResolutionHours: null,
@@ -354,9 +415,12 @@ module.exports = {
   changeStatus,
   changePriority,
   assignTechnician,
+  assignTeam,
+  escalate,
   closeTicket,
   reopenTicket,
   computeStats,
   canAccess,
   isOverdue,
+  insertHistory,
 };

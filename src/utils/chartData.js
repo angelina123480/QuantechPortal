@@ -30,4 +30,22 @@ function buildPriorityDonut(counts, priorities) {
   return buildDonutData(counts, priorities, PRIORITY_COLORS, 'Tickets');
 }
 
-module.exports = { buildBarData, buildDonutData, buildStatusDonut, buildPriorityDonut };
+// tickets: array with createdAt; days: how many trailing days to chart.
+function buildTicketsOverTime(tickets, days = 30) {
+  const counts = {};
+  const now = new Date();
+  const labels = [];
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    counts[key] = 0;
+    labels.push(key);
+  }
+  for (const t of tickets) {
+    const key = new Date(t.createdAt).toISOString().slice(0, 10);
+    if (key in counts) counts[key] += 1;
+  }
+  return { type: 'line', items: labels.map((key) => ({ label: key.slice(5), value: counts[key] })) };
+}
+
+module.exports = { buildBarData, buildDonutData, buildStatusDonut, buildPriorityDonut, buildTicketsOverTime };

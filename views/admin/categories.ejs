@@ -1,0 +1,61 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Categories</h1>
+    <p>Ticket categories and subcategories used across the portal.</p>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>Create Category</h3></div>
+  <div class="card-body">
+    <% if (errors && errors.form) { %><div class="alert alert-error"><span><%= errors.form %></span></div><% } %>
+    <form action="/admin/categories" method="POST" novalidate>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" value="<%= formData.name || '' %>" required>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <input type="text" id="description" name="description" value="<%= formData.description || '' %>">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Create Category</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <% categories.forEach(function(c) { %>
+      <div class="canned-response-item">
+        <details>
+          <summary><strong><%= c.name %></strong><span class="text-muted"><%= c.description %></span></summary>
+          <div class="mt-sm">
+            <p class="form-hint">Subcategories</p>
+            <div class="flex gap-sm" style="flex-wrap: wrap;">
+              <% c.subcategories.forEach(function(sub) { %>
+                <span class="badge badge-neutral"><%= sub.name %>
+                  <form action="/admin/categories/subcategories/<%= sub.id %>/delete" method="POST" style="display: inline;" class="js-confirm" data-confirm="Remove this subcategory?">
+                    <button type="submit" class="badge-remove-btn" aria-label="Remove <%= sub.name %>">&times;</button>
+                  </form>
+                </span>
+              <% }) %>
+            </div>
+            <form action="/admin/categories/<%= encodeURIComponent(c.name) %>/subcategories" method="POST" class="flex gap-sm mt-sm">
+              <input type="text" name="name" placeholder="New subcategory name" required>
+              <button type="submit" class="btn btn-secondary btn-sm">Add</button>
+            </form>
+            <form action="/admin/categories/<%= encodeURIComponent(c.name) %>/delete" method="POST" class="js-confirm mt-sm" data-confirm="Delete this category? Tickets already using it are unaffected.">
+              <button type="submit" class="btn btn-ghost btn-sm">Delete Category</button>
+            </form>
+          </div>
+        </details>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<%- include('../partials/layout-end') %>

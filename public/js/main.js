@@ -1,6 +1,28 @@
 (function () {
   'use strict';
 
+  // ---------- CSRF token: inject into every POST form + expose for fetch() callers ----------
+  var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+  document.querySelectorAll('form').forEach(function (form) {
+    if (form.method.toLowerCase() !== 'post' || form.querySelector('input[name="_csrf"]')) return;
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = '_csrf';
+    input.setAttribute('value', csrfToken); // via attribute so form.reset() doesn't blank it
+    form.appendChild(input);
+  });
+  window.QT = window.QT || {};
+  window.QT.csrfToken = csrfToken;
+
+  // ---------- Auto-submit selects (status / priority / assign / filters) ----------
+  document.querySelectorAll('select.auto-submit').forEach(function (select) {
+    select.addEventListener('change', function () {
+      var form = select.closest('form');
+      if (form) form.submit();
+    });
+  });
+
   // ---------- Mobile sidebar toggle ----------
   var toggle = document.getElementById('sidebarToggle');
   var overlay = document.getElementById('sidebarOverlay');

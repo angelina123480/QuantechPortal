@@ -1,0 +1,71 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Teams</h1>
+    <p>Support teams, their department, and their team leader.</p>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>Create Team</h3></div>
+  <div class="card-body">
+    <% if (errors && errors.form) { %><div class="alert alert-error"><span><%= errors.form %></span></div><% } %>
+    <form action="/admin/teams" method="POST" novalidate>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Team name</label>
+          <input type="text" id="name" name="name" value="<%= formData.name || '' %>" required>
+        </div>
+        <div class="form-group">
+          <label for="departmentId">Department</label>
+          <select id="departmentId" name="departmentId" required>
+            <option value="">Select&hellip;</option>
+            <% departments.forEach(function(d) { %><option value="<%= d.id %>"><%= d.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="leadUserId">Team leader</label>
+          <select id="leadUserId" name="leadUserId">
+            <option value="">Unassigned</option>
+            <% leaders.forEach(function(l) { %><option value="<%= l.id %>"><%= l.name %></option><% }) %>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Create Team</button>
+    </form>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table is-stackable">
+    <thead><tr><th>Team</th><th>Department</th><th>Team Leader</th><th>Actions</th></tr></thead>
+    <tbody>
+      <% teams.forEach(function(t) { %>
+        <tr>
+          <td data-label="Team"><%= t.name %></td>
+          <td data-label="Department"><%= t.departmentName %></td>
+          <td data-label="Team Leader"><%= t.leadName %></td>
+          <td data-label="Actions">
+            <details>
+              <summary class="btn btn-secondary btn-sm">Edit</summary>
+              <form action="/admin/teams/<%= t.id %>" method="POST" class="mt-sm flex-col gap-sm">
+                <input type="text" name="name" value="<%= t.name %>" required>
+                <select name="departmentId">
+                  <% departments.forEach(function(d) { %><option value="<%= d.id %>" <%= t.departmentId === d.id ? 'selected' : '' %>><%= d.name %></option><% }) %>
+                </select>
+                <select name="leadUserId">
+                  <option value="">Unassigned</option>
+                  <% leaders.forEach(function(l) { %><option value="<%= l.id %>" <%= t.leadUserId === l.id ? 'selected' : '' %>><%= l.name %></option><% }) %>
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+              </form>
+            </details>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/layout-end') %>

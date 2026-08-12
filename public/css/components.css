@@ -218,11 +218,12 @@ a.stat-card:hover {
   height: 16px;
   color: var(--text-muted);
 }
-.table-search input {
+.table-search input[type="search"] {
   padding-left: 36px;
 }
 
 .filter-select {
+  width: auto;
   min-width: 150px;
 }
 
@@ -538,6 +539,83 @@ fieldset legend {
   color: var(--text-muted);
 }
 .security-note svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; color: var(--color-accent); }
+
+.notification-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 4px 13px 10px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+.notification-row:last-child { border-bottom: none; }
+.notification-row:hover { background: var(--color-gray-50); }
+.notification-row.is-unread { background: var(--color-accent-light); }
+.notification-row-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  color: inherit;
+}
+.notification-row-link:hover { text-decoration: none; }
+.notification-row-title { font-size: 13.5px; font-weight: 600; }
+.notification-row-body { font-size: 12.5px; color: var(--text-secondary); margin-top: 2px; }
+.notification-row-time { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
+.notification-row-delete-form { flex-shrink: 0; }
+.notification-row-delete {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.notification-row-delete:hover { background: var(--color-gray-100); color: var(--color-danger); }
+
+.badge-remove-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 0 0 4px;
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.6;
+}
+.badge-remove-btn:hover { opacity: 1; }
+
+.canned-response-item {
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 0;
+}
+.canned-response-item:last-child { border-bottom: none; }
+.canned-response-item summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+}
+.canned-response-item summary::marker { color: var(--text-muted); }
+
+.totp-qr {
+  width: 180px;
+  height: 180px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  background: #fff;
+  margin: 10px 0 14px;
+}
 
 .section-title-row {
   display: flex;

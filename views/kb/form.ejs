@@ -1,0 +1,58 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1><%= article ? 'Edit Article' : 'New Article' %></h1>
+    <p>Knowledge base content shown to clients when published.</p>
+  </div>
+</div>
+
+<div class="ticket-form-layout">
+  <div class="card">
+    <div class="card-body">
+      <form action="<%= article ? '/kb/' + article.id : '/kb' %>" method="POST" novalidate>
+        <div class="form-group <%= errors && errors.title ? 'field-invalid' : '' %>">
+          <label for="title">Title</label>
+          <input type="text" id="title" name="title" value="<%= formData.title || '' %>" required>
+          <% if (errors && errors.title) { %><div class="form-error"><%= errors.title %></div><% } %>
+        </div>
+        <div class="form-row">
+          <div class="form-group <%= errors && errors.category ? 'field-invalid' : '' %>">
+            <label for="category">Category</label>
+            <select id="category" name="category" required>
+              <option value="">Select&hellip;</option>
+              <% categories.forEach(function(c) { %><option value="<%= c %>" <%= formData.category === c ? 'selected' : '' %>><%= c %></option><% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="tags">Tags <span class="text-muted">(comma separated)</span></label>
+            <input type="text" id="tags" name="tags" value="<%= (formData.tags && Array.isArray(formData.tags)) ? formData.tags.join(', ') : (formData.tags || '') %>">
+          </div>
+          <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              <option value="draft" <%= formData.status !== 'published' ? 'selected' : '' %>>Draft</option>
+              <option value="published" <%= formData.status === 'published' ? 'selected' : '' %>>Published</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group <%= errors && errors.summary ? 'field-invalid' : '' %>">
+          <label for="summary">Summary</label>
+          <input type="text" id="summary" name="summary" value="<%= formData.summary || '' %>" required>
+          <% if (errors && errors.summary) { %><div class="form-error"><%= errors.summary %></div><% } %>
+        </div>
+        <div class="form-group <%= errors && errors.body ? 'field-invalid' : '' %>">
+          <label for="body">Body</label>
+          <textarea id="body" name="body" rows="14" required><%= formData.body || '' %></textarea>
+          <% if (errors && errors.body) { %><div class="form-error"><%= errors.body %></div><% } %>
+        </div>
+        <div class="flex justify-between items-center">
+          <a href="/kb/manage" class="btn btn-ghost">Cancel</a>
+          <button type="submit" class="btn btn-primary"><%= article ? 'Save Changes' : 'Create Article' %></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/layout-end') %>

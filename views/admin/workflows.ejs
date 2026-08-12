@@ -1,0 +1,88 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Workflows</h1>
+    <p>Automatic ticket assignment rules, evaluated top to bottom — the first active match wins.</p>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>New Rule</h3></div>
+  <div class="card-body">
+    <% if (errors && errors.form) { %><div class="alert alert-error"><span><%= errors.form %></span></div><% } %>
+    <form action="/admin/workflows" method="POST" novalidate>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Rule name</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+          <label for="sortOrder">Order</label>
+          <input type="number" id="sortOrder" name="sortOrder" value="10" min="1">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category">Category condition <span class="text-muted">(blank = any)</span></label>
+          <select id="category" name="category">
+            <option value="">Any category</option>
+            <% categories.forEach(function(c) { %><option value="<%= c %>"><%= c %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="priority">Priority condition <span class="text-muted">(blank = any)</span></label>
+          <select id="priority" name="priority">
+            <option value="">Any priority</option>
+            <% priorities.forEach(function(p) { %><option value="<%= p %>"><%= p %></option><% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="teamId">Route to team</label>
+          <select id="teamId" name="teamId" required>
+            <option value="">Select&hellip;</option>
+            <% teams.forEach(function(t) { %><option value="<%= t.id %>"><%= t.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="agentId">Route to specific agent <span class="text-muted">(optional)</span></label>
+          <select id="agentId" name="agentId">
+            <option value="">Any agent on the team</option>
+            <% agents.forEach(function(a) { %><option value="<%= a.id %>"><%= a.name %></option><% }) %>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Create Rule</button>
+    </form>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table is-stackable">
+    <thead><tr><th>Order</th><th>Rule</th><th>Category</th><th>Priority</th><th>Team</th><th>Active</th><th>Actions</th></tr></thead>
+    <tbody>
+      <% rules.forEach(function(r) { %>
+        <tr>
+          <td data-label="Order"><%= r.sortOrder %></td>
+          <td data-label="Rule"><%= r.name %></td>
+          <td data-label="Category"><%= r.category || 'Any' %></td>
+          <td data-label="Priority"><%= r.priority || 'Any' %></td>
+          <td data-label="Team"><%= r.teamName || '—' %></td>
+          <td data-label="Active"><%= r.isActive ? 'Yes' : 'No' %></td>
+          <td data-label="Actions">
+            <form action="/admin/workflows/<%= r.id %>/toggle" method="POST" style="display:inline;">
+              <button type="submit" class="btn btn-secondary btn-sm"><%= r.isActive ? 'Disable' : 'Enable' %></button>
+            </form>
+            <form action="/admin/workflows/<%= r.id %>/delete" method="POST" style="display:inline;" class="js-confirm" data-confirm="Delete this rule?">
+              <button type="submit" class="btn btn-ghost btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/layout-end') %>

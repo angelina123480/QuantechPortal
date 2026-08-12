@@ -1,0 +1,55 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Departments</h1>
+    <p>QuanTech's internal support departments — each contains one or more teams.</p>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>Create Department</h3></div>
+  <div class="card-body">
+    <% if (errors && errors.form) { %><div class="alert alert-error"><span><%= errors.form %></span></div><% } %>
+    <form action="/admin/departments" method="POST" novalidate>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" value="<%= formData.name || '' %>" required>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <input type="text" id="description" name="description" value="<%= formData.description || '' %>">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Create Department</button>
+    </form>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table is-stackable">
+    <thead><tr><th>Name</th><th>Description</th><th>Teams</th><th>Actions</th></tr></thead>
+    <tbody>
+      <% departments.forEach(function(d) { %>
+        <tr>
+          <td data-label="Name"><%= d.name %></td>
+          <td data-label="Description"><%= d.description || '—' %></td>
+          <td data-label="Teams"><%= d.teamCount %></td>
+          <td data-label="Actions">
+            <details>
+              <summary class="btn btn-secondary btn-sm">Edit</summary>
+              <form action="/admin/departments/<%= d.id %>" method="POST" class="mt-sm flex-col gap-sm">
+                <input type="text" name="name" value="<%= d.name %>" required>
+                <input type="text" name="description" value="<%= d.description || '' %>">
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+              </form>
+            </details>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/layout-end') %>

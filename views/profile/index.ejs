@@ -80,6 +80,30 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
         <span>Your password is stored using bcrypt hashing and never transmitted in plain text after this form is submitted over a secured session.</span>
       </div>
+
+      <% if (isStaff) { %>
+        <hr class="divider">
+        <h4>Two-Factor Authentication</h4>
+        <% if (errors && errors.twoFactor) { %><div class="alert alert-error"><span><%= errors.twoFactor %></span></div><% } %>
+        <% if (currentUser.totpEnabled) { %>
+          <p class="form-hint">Two-factor authentication is <strong>enabled</strong> on your account.</p>
+          <form action="/profile/2fa/disable" method="POST" class="js-confirm" data-confirm="Disable two-factor authentication for your account?">
+            <button type="submit" class="btn btn-ghost">Disable 2FA</button>
+          </form>
+        <% } else if (typeof pending2fa !== 'undefined' && pending2fa) { %>
+          <p class="form-hint">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code it shows to confirm setup.</p>
+          <img src="<%= pending2fa.qrDataUrl %>" alt="Two-factor authentication QR code" class="totp-qr">
+          <form action="/profile/2fa/confirm" method="POST" class="flex gap-sm items-center">
+            <input type="text" name="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" required>
+            <button type="submit" class="btn btn-primary">Confirm &amp; Enable</button>
+          </form>
+        <% } else { %>
+          <p class="form-hint">Add an extra layer of security to your account using an authenticator app.</p>
+          <form action="/profile/2fa/setup" method="POST">
+            <button type="submit" class="btn btn-secondary">Enable 2FA</button>
+          </form>
+        <% } %>
+      <% } %>
     </div>
   </div>
 
@@ -102,7 +126,7 @@
         <div class="form-group">
           <label class="checkbox-row">
             <input type="checkbox" name="emailOnAssignment" <%= currentUser.notificationPrefs.emailOnAssignment ? 'checked' : '' %>>
-            Email me when a technician is assigned
+            Email me when a support agent is assigned
           </label>
         </div>
         <button type="submit" class="btn btn-secondary">Save Preferences</button>
