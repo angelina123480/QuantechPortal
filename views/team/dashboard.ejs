@@ -103,8 +103,8 @@
   </div>
 </div>
 
-<script type="application/json" data-chart-for="statusChart"><%- JSON.stringify(statusChart) %></script>
-<script type="application/json" data-chart-for="categoryChart"><%- JSON.stringify(categoryChart) %></script>
+<script type="application/json" data-chart-for="statusChart"><%- jsonScript(statusChart) %></script>
+<script type="application/json" data-chart-for="categoryChart"><%- jsonScript(categoryChart) %></script>
 <% } %>
 
 <%- include('../partials/layout-end', { pageScripts }) %>

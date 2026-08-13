@@ -33,6 +33,13 @@ function createApp() {
   app.set('views', path.join(__dirname, '..', 'views'));
   app.disable('x-powered-by');
 
+  // Safely embeds a JSON value inside an inline <script> block. JSON.stringify
+  // alone doesn't escape "</script>", which would prematurely close the tag if
+  // that substring is ever present inside a string value (e.g. a category
+  // name) — replacing "<" with its unicode escape neutralizes that without
+  // changing the parsed value.
+  app.locals.jsonScript = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
+
   // Every response here is per-session/personalized — none of it should be
   // cached. This also matters on Vercel specifically: its edge defaults to
   // marking function responses publicly cacheable, and a publicly-cacheable
