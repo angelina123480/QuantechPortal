@@ -13,9 +13,12 @@ const { buildPermissions, buildRolePermissions } = require('../src/data/seed/per
 const { buildSlaPolicies, buildSystemSettings } = require('../src/data/seed/slaPolicies');
 const { buildCannedResponses } = require('../src/data/seed/cannedResponses');
 const { buildAssignmentRules } = require('../src/data/seed/assignmentRules');
+const { buildProjects } = require('../src/data/seed/projects');
+const { buildMilestones } = require('../src/data/seed/milestones');
+const { buildTasks } = require('../src/data/seed/tasks');
 
 const TABLES_IN_TRUNCATE_ORDER = [
-  'audit_logs', 'notifications', 'sla_events', 'escalations', 'ticket_ratings', 'ticket_links',
+  'audit_logs', 'notifications', 'tasks', 'milestones', 'projects', 'sla_events', 'escalations', 'ticket_ratings', 'ticket_links',
   'attachments', 'ticket_history', 'tickets', 'assignment_rules', 'canned_responses',
   'password_reset_tokens', 'role_permissions', 'permissions', 'articles', 'subcategories',
   'categories', 'system_settings', 'sla_policies', 'users', 'sub_clients', 'teams', 'companies', 'departments',
@@ -211,8 +214,9 @@ async function seed() {
     console.log(`Inserting ${notifications.length} notifications...`);
     for (const n of notifications) {
       await client.query(
-        'INSERT INTO notifications (id, user_id, type, title, body, ticket_id, is_read, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
-        [n.id, n.userId, n.type, n.title, n.body, n.ticketId, n.isRead, n.createdAt]
+        `INSERT INTO notifications (id, user_id, type, title, body, ticket_id, task_id, milestone_id, project_id, is_read, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [n.id, n.userId, n.type, n.title, n.body, n.ticketId || null, n.taskId || null, n.milestoneId || null, n.projectId || null, n.isRead, n.createdAt]
       );
     }
 
@@ -232,6 +236,48 @@ async function seed() {
     }
 
     await client.query('ALTER SEQUENCE ticket_number_seq RESTART WITH 239');
+
+    // ---------- Projects, milestones & tasks ----------
+    const projects = buildProjects();
+    console.log(`Inserting ${projects.length} projects...`);
+    for (const p of projects) {
+      await client.query(
+        `INSERT INTO projects (
+           id, name, description, company, sub_client_id, project_manager_id, team_id,
+           start_date, expected_completion_date, actual_completion_date, status, priority, budget, notes, created_at, updated_at
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+        [
+          p.id, p.name, p.description, p.company, p.subClientId, p.projectManagerId, p.teamId,
+          p.startDate, p.expectedCompletionDate, p.actualCompletionDate, p.status, p.priority, p.budget, p.notes, p.createdAt, p.updatedAt,
+        ]
+      );
+    }
+
+    const milestones = buildMilestones();
+    console.log(`Inserting ${milestones.length} milestones...`);
+    for (const m of milestones) {
+      await client.query(
+        `INSERT INTO milestones (
+           id, project_id, name, description, assigned_to_id, start_date, due_date, status, progress_percentage, priority, sort_order, created_at, updated_at
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+        [m.id, m.projectId, m.name, m.description, m.assignedToId, m.startDate, m.dueDate, m.status, m.progressPercentage, m.priority, m.sortOrder, m.createdAt, m.updatedAt]
+      );
+    }
+
+    const tasks = buildTasks({ tickets });
+    console.log(`Inserting ${tasks.length} tasks...`);
+    for (const t of tasks) {
+      await client.query(
+        `INSERT INTO tasks (
+           id, title, description, assigned_to_id, created_by_id, project_id, milestone_id, ticket_id,
+           status, priority, due_date, checklist, created_at, updated_at, completed_at
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+        [
+          t.id, t.title, t.description || null, t.assignedToId, t.createdById, t.projectId, t.milestoneId, t.ticketId,
+          t.status, t.priority, t.dueDate, JSON.stringify(t.checklist), t.createdAt, t.updatedAt, t.completedAt,
+        ]
+      );
+    }
 
     // ---------- Knowledge base articles ----------
     const articles = buildArticles();

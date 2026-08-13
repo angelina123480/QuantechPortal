@@ -1,8 +1,10 @@
 const ticketModel = require('../models/ticketModel');
+const taskModel = require('../models/taskModel');
+const projectModel = require('../models/projectModel');
 const categoryModel = require('../models/categoryModel');
 const slaEngine = require('../services/slaEngine');
 const { buildBarData, buildPriorityDonut } = require('../utils/chartData');
-const { PRIORITIES } = require('../config/constants');
+const { PRIORITIES, TASK_OPEN_STATUSES } = require('../config/constants');
 
 async function dashboard(req, res) {
   const categories = await categoryModel.listNames();
@@ -20,6 +22,19 @@ async function dashboard(req, res) {
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .slice(0, 8);
 
+  const myTasks = await taskModel.list({ assignedToId: req.user.id });
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const openTasks = myTasks.filter((t) => TASK_OPEN_STATUSES.includes(t.status));
+  const overdueTasks = openTasks.filter((t) => t.dueDate && new Date(t.dueDate) < startOfToday);
+  const dueTodayTasks = openTasks.filter((t) => t.dueDate && new Date(t.dueDate) >= startOfToday && new Date(t.dueDate) < endOfToday);
+  const recentTasks = openTasks.slice(0, 6);
+
+  const projectIds = [...new Set(recentTasks.map((t) => t.projectId).filter(Boolean))];
+  const projects = (await Promise.all(projectIds.map((id) => projectModel.findById(id)))).filter(Boolean);
+  const projectById = Object.fromEntries(projects.map((p) => [p.id, p]));
+
   res.render('agent/dashboard', {
     title: 'Agent Dashboard',
     stats,
@@ -27,6 +42,11 @@ async function dashboard(req, res) {
     overdueTickets,
     recentTickets,
     recentActivity,
+    openTasks,
+    overdueTasks,
+    dueTodayTasks,
+    recentTasks,
+    projectById,
     priorityChart: buildPriorityDonut(stats.byPriority, PRIORITIES),
     categoryChart: buildBarData(stats.byCategory, categories),
     pageScripts: ['charts'],

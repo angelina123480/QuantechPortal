@@ -9,18 +9,21 @@ function mapRow(row) {
     title: row.title,
     body: row.body,
     ticketId: row.ticket_id,
+    taskId: row.task_id,
+    milestoneId: row.milestone_id,
+    projectId: row.project_id,
     isRead: row.is_read,
     createdAt: row.created_at,
   };
 }
 
-async function create({ userId, type, title, body, ticketId }) {
+async function create({ userId, type, title, body, ticketId, taskId, milestoneId, projectId }) {
   const id = uuidv4();
   await pool.query(
-    'INSERT INTO notifications (id, user_id, type, title, body, ticket_id, is_read, created_at) VALUES ($1,$2,$3,$4,$5,$6,false,now())',
-    [id, userId, type, title, body || null, ticketId || null]
+    'INSERT INTO notifications (id, user_id, type, title, body, ticket_id, task_id, milestone_id, project_id, is_read, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,false,now())',
+    [id, userId, type, title, body || null, ticketId || null, taskId || null, milestoneId || null, projectId || null]
   );
-  return { id, userId, type, title, body, ticketId, isRead: false };
+  return { id, userId, type, title, body, ticketId, taskId, milestoneId, projectId, isRead: false };
 }
 
 // Same notification fanned out to multiple recipients (e.g. every member of a team).

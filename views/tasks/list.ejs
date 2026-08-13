@@ -1,0 +1,119 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>My Tasks</h1>
+    <p>Personal to-dos, plus anything assigned to you from a project, milestone, or ticket.</p>
+  </div>
+</div>
+
+<form class="table-toolbar" id="taskFilterForm" method="GET">
+  <div class="table-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" name="q" placeholder="Search tasks..." value="<%= query.q || '' %>">
+  </div>
+  <select name="priority" class="filter-select auto-submit">
+    <option value="">All priorities</option>
+    <% priorities.forEach(function(p) { %><option value="<%= p %>" <%= query.priority === p ? 'selected' : '' %>><%= p %></option><% }) %>
+  </select>
+  <% if (isManager) { %>
+    <select name="assignedTo" class="filter-select auto-submit">
+      <option value="">My tasks</option>
+      <% technicians.forEach(function(t) { %><option value="<%= t.id %>" <%= query.assignedTo === t.id ? 'selected' : '' %>><%= t.name %>'s tasks</option><% }) %>
+    </select>
+  <% } %>
+  <button type="submit" class="btn btn-secondary">Search</button>
+</form>
+
+<div class="table-toolbar" style="margin-bottom: 8px;">
+  <a href="?<%= new URLSearchParams(Object.assign({}, query, { status: '' })).toString() %>" class="btn <%= !query.status ? 'btn-secondary' : 'btn-ghost' %> btn-sm">All</a>
+  <% statuses.forEach(function(s) { %>
+    <a href="?<%= new URLSearchParams(Object.assign({}, query, { status: s })).toString() %>" class="btn <%= query.status === s ? 'btn-secondary' : 'btn-ghost' %> btn-sm"><%= s %></a>
+  <% }) %>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>Add a task</h3></div>
+  <div class="card-body">
+    <form action="/tasks" method="POST" class="flex gap-sm items-center" style="flex-wrap: wrap;">
+      <input type="text" name="title" placeholder="Task title" required style="flex: 2; min-width: 200px;">
+      <select name="priority" style="flex: 1;">
+        <% priorities.forEach(function(p) { %><option value="<%= p %>" <%= p === 'Medium' ? 'selected' : '' %>><%= p %></option><% }) %>
+      </select>
+      <input type="date" name="dueDate" style="flex: 1;">
+      <% if (isManager) { %>
+        <select name="assignedToId" style="flex: 1;">
+          <option value="">Myself</option>
+          <% technicians.forEach(function(t) { %><option value="<%= t.id %>"><%= t.name %></option><% }) %>
+        </select>
+      <% } %>
+      <button type="submit" class="btn btn-primary btn-sm">Add Task</button>
+    </form>
+  </div>
+</div>
+
+<% if (tasks.length === 0) { %>
+  <div class="table-empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <p>No tasks match your filters.</p>
+  </div>
+<% } %>
+
+<% tasks.forEach(function(t) { %>
+  <div class="card mb-lg" id="task-<%= t.id %>">
+    <div class="card-body">
+      <div class="flex justify-between items-start gap-sm" style="flex-wrap: wrap;">
+        <div>
+          <strong style="font-size: 16px;"><%= t.title %></strong>
+          <div class="recent-ticket-meta" style="margin-top: 4px;">
+            <% if (t.projectId && projectById[t.projectId]) { %>
+              <a href="/projects/<%= t.projectId %>" class="badge badge-neutral"><%= projectById[t.projectId].name %></a>
+            <% } else if (t.ticketId) { %>
+              <a href="/tickets/<%= t.ticketId %>" class="badge badge-neutral">Linked ticket</a>
+            <% } else { %>
+              <span class="badge badge-neutral">Personal task</span>
+            <% } %>
+            <%- include('../partials/priority-badge', { priority: t.priority }) %>
+            <%- include('../partials/status-badge', { status: t.status }) %>
+            <% if (t.dueDate) { %><span>Due <%= new Date(t.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></span><% } %>
+          </div>
+          <% if (t.description) { %><p class="text-muted" style="margin-top: 8px; font-size: 13.5px;"><%= t.description %></p><% } %>
+        </div>
+        <form action="/tasks/<%= t.id %>/status" method="POST">
+          <select name="status" class="filter-select auto-submit">
+            <% statuses.forEach(function(s) { %><option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= s %></option><% }) %>
+          </select>
+        </form>
+      </div>
+
+      <details style="margin-top: 12px;">
+        <summary class="btn btn-ghost btn-sm">Checklist (<%= t.checklist.filter(function(i){return i.done;}).length %>/<%= t.checklist.length %>)</summary>
+        <div class="mt-sm flex-col gap-sm">
+          <% t.checklist.forEach(function(item, index) { %>
+            <form action="/tasks/<%= t.id %>/checklist" method="POST" class="flex items-center gap-sm">
+              <input type="hidden" name="action" value="toggle">
+              <input type="hidden" name="index" value="<%= index %>">
+              <label class="checkbox-row" style="flex: 1;">
+                <input type="checkbox" <%= item.done ? 'checked' : '' %> onchange="this.form.submit()">
+                <span style="<%= item.done ? 'text-decoration: line-through; opacity: .6;' : '' %>"><%= item.text %></span>
+              </label>
+            </form>
+          <% }) %>
+          <form action="/tasks/<%= t.id %>/checklist" method="POST" class="flex gap-sm">
+            <input type="hidden" name="action" value="add">
+            <input type="text" name="text" placeholder="Add checklist item" style="flex: 1;">
+            <button type="submit" class="btn btn-ghost btn-sm">Add</button>
+          </form>
+        </div>
+      </details>
+
+      <div class="flex justify-between items-center mt-sm">
+        <form action="/tasks/<%= t.id %>/delete" method="POST" onsubmit="return confirm('Delete this task?');">
+          <button type="submit" class="btn btn-ghost btn-sm">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+<% }) %>
+
+<%- include('../partials/layout-end') %>

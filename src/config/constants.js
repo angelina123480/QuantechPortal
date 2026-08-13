@@ -37,6 +37,15 @@ const STATUSES = ['Open', 'In Progress', 'Waiting for Client', 'Escalated', 'Res
 
 const OPEN_STATUSES = ['Open', 'In Progress', 'Waiting for Client', 'Escalated'];
 
+// Projects/Milestones/Tasks (Phase 2). "Archived"/"Cancelled" are the
+// remove-from-view mechanism for projects/milestones — there's no hard
+// delete for either, so no separate is_archived flag is needed.
+const PROJECT_STATUSES = ['Planning', 'Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled', 'Archived'];
+const MILESTONE_STATUSES = ['Not Started', 'In Progress', 'Blocked', 'Completed', 'Cancelled'];
+const MILESTONE_OPEN_STATUSES = ['Not Started', 'In Progress', 'Blocked'];
+const TASK_STATUSES = ['To Do', 'In Progress', 'Blocked', 'Completed', 'Cancelled'];
+const TASK_OPEN_STATUSES = ['To Do', 'In Progress', 'Blocked'];
+
 // Fallback SLA windows (hours) — seeds the admin-configurable `sla_policies`
 // table; once seeded, slaEngine reads live policy rows instead of this.
 const SLA_HOURS_BY_PRIORITY = {
@@ -67,6 +76,9 @@ const NOTIFICATION_TYPES = [
   'ticket_resolved',
   'ticket_closed',
   'ticket_restored',
+  'task_assigned',
+  'milestone_assigned',
+  'project_assigned',
 ];
 
 const TICKET_LINK_TYPES = ['duplicate', 'related', 'parent'];
@@ -120,6 +132,11 @@ module.exports = {
   PRIORITIES,
   STATUSES,
   OPEN_STATUSES,
+  PROJECT_STATUSES,
+  MILESTONE_STATUSES,
+  MILESTONE_OPEN_STATUSES,
+  TASK_STATUSES,
+  TASK_OPEN_STATUSES,
   SLA_HOURS_BY_PRIORITY,
   SLA_RESPONSE_MINUTES_BY_PRIORITY,
   NOTIFICATION_TYPES,

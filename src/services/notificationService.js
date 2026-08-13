@@ -12,6 +12,9 @@ const EMAIL_PREF_BY_TYPE = {
   ticket_resolved: 'emailOnStatusChange',
   ticket_closed: 'emailOnStatusChange',
   ticket_escalated: 'emailOnStatusChange',
+  task_assigned: 'emailOnAssignment',
+  milestone_assigned: 'emailOnAssignment',
+  project_assigned: 'emailOnAssignment',
 };
 
 /**
@@ -20,9 +23,9 @@ const EMAIL_PREF_BY_TYPE = {
  * them into that category (or the type has no gating pref, e.g. SLA alerts —
  * those always email staff since they're time-sensitive).
  */
-async function notify(userIds, { type, title, body, ticketId }) {
+async function notify(userIds, { type, title, body, ticketId, taskId, milestoneId, projectId }) {
   const ids = Array.isArray(userIds) ? userIds : [userIds];
-  const created = await notificationModel.createMany(ids, { type, title, body, ticketId });
+  const created = await notificationModel.createMany(ids, { type, title, body, ticketId, taskId, milestoneId, projectId });
 
   const users = await userModel.findByIds(ids);
   const prefKey = EMAIL_PREF_BY_TYPE[type];

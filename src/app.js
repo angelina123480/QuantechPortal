@@ -14,6 +14,8 @@ const { consumeFlash } = require('./utils/flash');
 const authRoutes = require('./routes/authRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
+const projectRoutes = require('./routes/projectRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 const kbRoutes = require('./routes/kbRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -96,6 +98,8 @@ function createApp() {
   app.use('/', authRoutes);
   app.use('/', dashboardRoutes);
   app.use('/tickets', ticketRoutes);
+  app.use('/projects', projectRoutes);
+  app.use('/tasks', taskRoutes);
   app.use('/kb', kbRoutes);
   app.use('/profile', profileRoutes);
   app.use('/admin', adminRoutes);

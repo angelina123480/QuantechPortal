@@ -14,7 +14,14 @@
     <% } else { %>
       <% notifications.forEach(function(n) { %>
         <div class="notification-row <%= !n.isRead ? 'is-unread' : '' %>">
-          <a href="<%= n.ticketId ? '/tickets/' + n.ticketId : '#' %>" class="notification-row-link">
+          <%
+            var notifHref = '#';
+            if (n.ticketId) notifHref = '/tickets/' + n.ticketId;
+            else if (n.milestoneId) notifHref = '/projects/' + n.projectId + '#milestone-' + n.milestoneId;
+            else if (n.taskId) notifHref = '/tasks#task-' + n.taskId;
+            else if (n.projectId) notifHref = '/projects/' + n.projectId;
+          %>
+          <a href="<%= notifHref %>" class="notification-row-link">
             <div class="notification-row-main">
               <div class="notification-row-title"><%= n.title %></div>
               <% if (n.body) { %><div class="notification-row-body"><%= n.body %></div><% } %>

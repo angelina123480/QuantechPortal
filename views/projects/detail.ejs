@@ -1,0 +1,180 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1><%= project.name %></h1>
+    <p>
+      <%= project.company %><% if (team) { %> &middot; <%= team.name %><% } %><% if (projectManager) { %> &middot; PM: <%= projectManager.name %><% } %>
+      &middot; <%- include('../partials/status-badge', { status: project.status }) %>
+    </p>
+  </div>
+  <% if (isManager) { %>
+    <div class="page-header-actions">
+      <form action="/projects/<%= project.id %>/status" method="POST" class="flex gap-sm">
+        <select name="status" class="filter-select auto-submit">
+          <% statuses.forEach(function(s) { %><option value="<%= s %>" <%= project.status === s ? 'selected' : '' %>><%= s %></option><% }) %>
+        </select>
+      </form>
+    </div>
+  <% } %>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card is-accent-success">
+    <div class="stat-card-top"><span class="stat-card-label">Progress</span></div>
+    <div class="stat-card-value"><%= progress %>%</div>
+    <div class="progress-bar mt-sm"><div class="progress-bar-fill" style="width: <%= progress %>%;"></div></div>
+  </div>
+  <div class="stat-card is-accent-info">
+    <div class="stat-card-top"><span class="stat-card-label">Milestones</span></div>
+    <div class="stat-card-value"><%= milestonesDone %> / <%= milestones.length %></div>
+  </div>
+  <div class="stat-card is-accent-neutral">
+    <div class="stat-card-top"><span class="stat-card-label">Open tasks</span></div>
+    <div class="stat-card-value"><%= openTasks %></div>
+  </div>
+  <div class="stat-card is-accent-warning">
+    <div class="stat-card-top"><span class="stat-card-label">Expected completion</span></div>
+    <div class="stat-card-value" style="font-size: 20px;">
+      <%= project.expectedCompletionDate ? new Date(project.expectedCompletionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—' %>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>Milestones (<%= milestones.length %>)</h3></div>
+  <div class="card-body">
+    <% if (milestones.length === 0) { %>
+      <p class="text-muted">No milestones yet.</p>
+    <% } %>
+    <% milestones.forEach(function(m) { %>
+      <div class="recent-ticket-item" id="milestone-<%= m.id %>" style="flex-wrap: wrap;">
+        <div class="recent-ticket-main">
+          <span class="recent-ticket-title"><%= m.name %></span>
+          <div class="recent-ticket-meta">
+            <span><%= m.assignedToId && technicianById[m.assignedToId] ? technicianById[m.assignedToId].name : 'Unassigned' %></span>
+            <% if (m.dueDate) { %><span>&middot;</span><span>Due <%= new Date(m.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></span><% } %>
+            <%- include('../partials/priority-badge', { priority: m.priority }) %>
+          </div>
+        </div>
+        <form action="/projects/<%= project.id %>/milestones/<%= m.id %>/progress" method="POST" class="flex gap-sm items-center">
+          <select name="status" class="filter-select">
+            <% milestoneStatuses.forEach(function(s) { %><option value="<%= s %>" <%= m.status === s ? 'selected' : '' %>><%= s %></option><% }) %>
+          </select>
+          <input type="number" name="progressPercentage" min="0" max="100" value="<%= m.progressPercentage %>" style="width: 70px;">
+          <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+        </form>
+      </div>
+    <% }) %>
+
+    <% if (isManager) { %>
+      <form action="/projects/<%= project.id %>/milestones" method="POST" class="mt-md flex-col gap-sm" style="max-width: 480px;">
+        <input type="text" name="name" placeholder="Milestone name" required>
+        <div class="flex gap-sm">
+          <select name="assignedToId" style="flex:1;">
+            <option value="">Unassigned</option>
+            <% technicians.forEach(function(t) { %><option value="<%= t.id %>"><%= t.name %></option><% }) %>
+          </select>
+          <input type="date" name="dueDate" style="flex:1;">
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm">Add Milestone</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>Tasks (<%= tasks.length %>)</h3></div>
+  <div class="card-body">
+    <% if (tasks.length === 0) { %>
+      <p class="text-muted">No tasks linked to this project yet.</p>
+    <% } %>
+    <% tasks.forEach(function(t) { %>
+      <a href="/tasks#task-<%= t.id %>" class="recent-ticket-item">
+        <div class="recent-ticket-main">
+          <span class="recent-ticket-title"><%= t.title %></span>
+          <div class="recent-ticket-meta">
+            <span><%= t.assignedToId && technicianById[t.assignedToId] ? technicianById[t.assignedToId].name : 'Unassigned' %></span>
+            <% if (t.dueDate) { %><span>&middot;</span><span>Due <%= new Date(t.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></span><% } %>
+          </div>
+        </div>
+        <%- include('../partials/priority-badge', { priority: t.priority }) %>
+        <%- include('../partials/status-badge', { status: t.status }) %>
+      </a>
+    <% }) %>
+  </div>
+</div>
+
+<% if (relatedTickets.length) { %>
+<div class="card mb-lg">
+  <div class="card-header"><h3>Related Tickets (<%= relatedTickets.length %>)</h3></div>
+  <div class="card-body">
+    <% relatedTickets.forEach(function(t) { %>
+      <a href="/tickets/<%= t.id %>" class="recent-ticket-item">
+        <div class="recent-ticket-main">
+          <span class="recent-ticket-title"><%= t.ticketNumber %> &middot; <%= t.title %></span>
+        </div>
+        <%- include('../partials/priority-badge', { priority: t.priority }) %>
+        <%- include('../partials/status-badge', { status: t.status }) %>
+      </a>
+    <% }) %>
+  </div>
+</div>
+<% } %>
+
+<% if (isManager) { %>
+<div class="card">
+  <div class="card-header">
+    <details>
+      <summary class="btn btn-secondary btn-sm">Edit Project</summary>
+      <form action="/projects/<%= project.id %>" method="POST" class="mt-md flex-col gap-sm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-name">Name</label>
+            <input type="text" id="edit-name" name="name" value="<%= project.name %>" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-company">Company</label>
+            <select id="edit-company" name="company" required>
+              <% companies.forEach(function(c) { %><option value="<%= c.name %>" <%= project.company === c.name ? 'selected' : '' %>><%= c.name %></option><% }) %>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-description">Description</label>
+          <textarea id="edit-description" name="description"><%= project.description || '' %></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-projectManagerId">Project manager</label>
+            <select id="edit-projectManagerId" name="projectManagerId">
+              <option value="">Unassigned</option>
+              <% technicians.forEach(function(t) { %><option value="<%= t.id %>" <%= project.projectManagerId === t.id ? 'selected' : '' %>><%= t.name %></option><% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-teamId">Team</label>
+            <select id="edit-teamId" name="teamId">
+              <option value="">None</option>
+              <% teams.forEach(function(t) { %><option value="<%= t.id %>" <%= project.teamId === t.id ? 'selected' : '' %>><%= t.name %></option><% }) %>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-expectedCompletionDate">Expected completion</label>
+            <input type="date" id="edit-expectedCompletionDate" name="expectedCompletionDate" value="<%= project.expectedCompletionDate ? new Date(project.expectedCompletionDate).toISOString().slice(0,10) : '' %>">
+          </div>
+          <div class="form-group">
+            <label for="edit-budget">Budget</label>
+            <input type="number" id="edit-budget" name="budget" min="0" step="0.01" value="<%= project.budget || '' %>">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+      </form>
+    </details>
+  </div>
+</div>
+<% } %>
+
+<%- include('../partials/layout-end', { pageScripts: ['projects'] }) %>

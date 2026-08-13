@@ -1,0 +1,108 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>New Project</h1>
+    <p>Set up a new IT implementation or service engagement.</p>
+  </div>
+</div>
+
+<div class="ticket-form-layout">
+  <div class="card">
+    <div class="card-body">
+      <% if (errors && errors.form) { %><div class="alert alert-error"><span><%= errors.form %></span></div><% } %>
+      <form action="/projects" method="POST" novalidate>
+
+        <fieldset>
+          <legend>Basics</legend>
+          <div class="form-group">
+            <label for="name">Project name</label>
+            <input type="text" id="name" name="name" placeholder="e.g. Network Infrastructure Upgrade" value="<%= formData.name || '' %>" required>
+          </div>
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" placeholder="What is this project for?"><%= formData.description || '' %></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="company">Company</label>
+              <select id="company" name="company" required data-subclient-map="<%- jsonAttr(subClients) %>">
+                <option value="">Select a company&hellip;</option>
+                <% companies.forEach(function(c) { %><option value="<%= c.name %>" <%= formData.company === c.name ? 'selected' : '' %>><%= c.name %></option><% }) %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="subClientId">Sub-client <span class="text-muted">(optional)</span></label>
+              <select id="subClientId" name="subClientId">
+                <option value="">None (whole company)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <div class="priority-picker">
+              <% priorities.forEach(function(p) { %>
+                <div class="priority-option">
+                  <input type="radio" id="priority-<%= p %>" name="priority" value="<%= p %>" <%= (formData.priority === p || (!formData.priority && p === 'Medium')) ? 'checked' : '' %>>
+                  <label for="priority-<%= p %>" class="priority-option-label">
+                    <span class="dot is-<%= p.toLowerCase() %>"></span>
+                    <%= p %>
+                  </label>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>People &amp; team</legend>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="projectManagerId">Project manager <span class="text-muted">(optional)</span></label>
+              <select id="projectManagerId" name="projectManagerId">
+                <option value="">Unassigned</option>
+                <% technicians.forEach(function(t) { %><option value="<%= t.id %>" <%= formData.projectManagerId === t.id ? 'selected' : '' %>><%= t.name %></option><% }) %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="teamId">Team <span class="text-muted">(optional)</span></label>
+              <select id="teamId" name="teamId">
+                <option value="">None</option>
+                <% teams.forEach(function(t) { %><option value="<%= t.id %>" <%= formData.teamId === t.id ? 'selected' : '' %>><%= t.name %></option><% }) %>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Schedule &amp; budget</legend>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="startDate">Start date <span class="text-muted">(optional)</span></label>
+              <input type="date" id="startDate" name="startDate" value="<%= formData.startDate || '' %>">
+            </div>
+            <div class="form-group">
+              <label for="expectedCompletionDate">Expected completion <span class="text-muted">(optional)</span></label>
+              <input type="date" id="expectedCompletionDate" name="expectedCompletionDate" value="<%= formData.expectedCompletionDate || '' %>">
+            </div>
+            <div class="form-group">
+              <label for="budget">Budget <span class="text-muted">(optional)</span></label>
+              <input type="number" id="budget" name="budget" min="0" step="0.01" placeholder="$" value="<%= formData.budget || '' %>">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="notes">Notes <span class="text-muted">(optional)</span></label>
+            <textarea id="notes" name="notes"><%= formData.notes || '' %></textarea>
+          </div>
+        </fieldset>
+
+        <div class="flex justify-between items-center">
+          <a href="/projects" class="btn btn-ghost">Cancel</a>
+          <button type="submit" class="btn btn-primary">Create Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/layout-end', { pageScripts: ['projects'] }) %>

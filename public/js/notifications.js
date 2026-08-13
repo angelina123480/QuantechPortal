@@ -44,7 +44,11 @@
 
     var link = document.createElement('a');
     link.className = 'notification-dropdown-item-link';
-    link.href = n.ticketId ? '/tickets/' + n.ticketId : '/notifications';
+    if (n.ticketId) link.href = '/tickets/' + n.ticketId;
+    else if (n.milestoneId) link.href = '/projects/' + n.projectId + '#milestone-' + n.milestoneId;
+    else if (n.taskId) link.href = '/tasks#task-' + n.taskId;
+    else if (n.projectId) link.href = '/projects/' + n.projectId;
+    else link.href = '/notifications';
     link.innerHTML = '<span class="notification-dropdown-item-title"></span><span class="notification-dropdown-item-time"></span>';
     link.querySelector('.notification-dropdown-item-title').textContent = n.title;
     link.querySelector('.notification-dropdown-item-time').textContent = timeAgo(n.createdAt);

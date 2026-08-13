@@ -39,6 +39,30 @@
   </div>
 </div>
 
+<div class="stat-grid">
+  <a href="/tasks" class="stat-card is-accent-neutral">
+    <div class="stat-card-top">
+      <span class="stat-card-label">My Open Tasks</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= openTasks.length %></div>
+  </a>
+  <a href="/tasks" class="stat-card is-accent-warning">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Tasks Due Today</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= dueTodayTasks.length %></div>
+  </a>
+  <a href="/tasks" class="stat-card is-accent-danger">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Overdue Tasks</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= overdueTasks.length %></div>
+  </a>
+</div>
+
 <div class="charts-grid">
   <div class="card">
     <div class="card-header"><h3>My Tickets by Priority</h3></div>
@@ -47,6 +71,19 @@
   <div class="card">
     <div class="card-header"><h3>My Tickets by Category</h3></div>
     <div class="chart-card-body"><div id="categoryChart" data-chart-title="My tickets by category"></div></div>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>My Tasks</h3><a href="/tasks" class="btn btn-secondary btn-sm">View all</a></div>
+  <div class="card-body">
+    <% if (recentTasks.length === 0) { %>
+      <p class="text-muted">No open tasks — you're all caught up.</p>
+    <% } else { %>
+      <% recentTasks.forEach(function(task) { %>
+        <%- include('../partials/recent-task-item', { task, projectById }) %>
+      <% }) %>
+    <% } %>
   </div>
 </div>
 

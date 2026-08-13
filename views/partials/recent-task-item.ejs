@@ -1,0 +1,14 @@
+<a href="/tasks#task-<%= task.id %>" class="recent-ticket-item">
+  <div class="recent-ticket-main">
+    <span class="recent-ticket-title"><%= task.title %></span>
+    <div class="recent-ticket-meta">
+      <span><%= (typeof projectById !== 'undefined' && task.projectId && projectById[task.projectId]) ? projectById[task.projectId].name : 'Personal task' %></span>
+      <% if (task.dueDate) { %>
+        <span>&middot;</span>
+        <span>Due <%= new Date(task.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></span>
+      <% } %>
+    </div>
+  </div>
+  <%- include('priority-badge', { priority: task.priority }) %>
+  <%- include('status-badge', { status: task.status }) %>
+</a>
