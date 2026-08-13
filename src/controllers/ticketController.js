@@ -71,6 +71,7 @@ async function list(req, res) {
     priority: req.query.priority || undefined,
     category: req.query.category || undefined,
     search: req.query.q || undefined,
+    archived: false,
     page: Math.max(1, Number(req.query.page) || 1),
     pageSize: 25,
   };
@@ -87,6 +88,44 @@ async function list(req, res) {
   res.render('tickets/list', {
     title: req.user.role === 'client' ? 'My Tickets' : 'All Tickets',
     tickets,
+    categories,
+    priorities: PRIORITIES,
+    statuses: STATUSES,
+    technicians: userModel.isStaff(req.user) ? await userModel.listTechnicians() : [],
+    query: req.query,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  });
+}
+
+async function archiveList(req, res) {
+  const categories = await categoryModel.listNames();
+  const filters = {
+    status: req.query.status || undefined,
+    priority: req.query.priority || undefined,
+    category: req.query.category || undefined,
+    search: req.query.q || undefined,
+    archived: true,
+    archivedFrom: req.query.archivedFrom ? new Date(req.query.archivedFrom) : undefined,
+    archivedTo: req.query.archivedTo ? new Date(new Date(req.query.archivedTo).getTime() + 24 * 60 * 60 * 1000 - 1) : undefined,
+    page: Math.max(1, Number(req.query.page) || 1),
+    pageSize: 25,
+  };
+  if (req.query.technician === 'me') filters.assignedTechnicianId = req.user.id;
+  else if (req.query.technician) filters.assignedTechnicianId = req.query.technician;
+
+  const { tickets: rawTickets, total, page, pageSize } = await ticketModel.listVisibleTo(req.user, filters);
+  const tickets = await serializeTickets(rawTickets);
+  const archivedByIds = tickets.map((t) => t.archivedBy).filter(Boolean);
+  const archivedByUsers = await userModel.findByIds(archivedByIds);
+  const archivedByName = Object.fromEntries(archivedByUsers.map((u) => [u.id, u.name]));
+
+  res.render('tickets/archive', {
+    title: 'Archived Tickets',
+    tickets,
+    archivedByName,
     categories,
     priorities: PRIORITIES,
     statuses: STATUSES,
@@ -402,6 +441,21 @@ async function bulkStatus(req, res) {
   res.json({ tickets: await serializeTickets(tickets) });
 }
 
+async function bulkArchive(req, res) {
+  const tickets = await loadOwnedTickets(req, req.body.ticketIds);
+  const archived = [];
+  for (const ticket of tickets) {
+    try {
+      await ticketModel.archive(ticket, req.user, req.body.reason);
+      await auditLogger.log({ user: req.user, action: 'ticket.archive', entityType: 'ticket', entityId: ticket.id, before: { status: ticket.status }, req });
+      archived.push(ticket);
+    } catch (err) {
+      if (err.code !== 'NOT_ELIGIBLE') throw err;
+    }
+  }
+  res.json({ tickets: await serializeTickets(archived), skipped: tickets.length - archived.length });
+}
+
 async function close(req, res) {
   const ticket = await loadTicketOr404(req, res);
   if (!ticket) return;
@@ -434,9 +488,51 @@ async function reopen(req, res) {
   res.redirect(`/tickets/${ticket.id}`);
 }
 
+async function archive(req, res) {
+  const ticket = await loadTicketOr404(req, res);
+  if (!ticket) return;
+  if (!userModel.isStaff(req.user) && ticket.clientUserId !== req.user.id) return res.status(403).end();
+
+  try {
+    await ticketModel.archive(ticket, req.user, (req.body.reason || '').trim() || null);
+  } catch (err) {
+    if (err.code !== 'NOT_ELIGIBLE') throw err;
+    if (wantsJson(req)) return res.status(400).json({ error: err.message });
+    setFlash(req, 'error', err.message);
+    return res.redirect(`/tickets/${ticket.id}`);
+  }
+  await auditLogger.log({ user: req.user, action: 'ticket.archive', entityType: 'ticket', entityId: ticket.id, before: { status: ticket.status }, req });
+
+  if (wantsJson(req)) return res.json({ ticket: await serializeTicket(ticket) });
+  setFlash(req, 'success', `Ticket ${ticket.ticketNumber} was archived.`);
+  res.redirect(`/tickets/${ticket.id}`);
+}
+
+async function restore(req, res) {
+  const ticket = await loadTicketOr404(req, res);
+  if (!ticket) return;
+  if (!userModel.isStaff(req.user)) return res.status(403).end();
+
+  await ticketModel.restore(ticket, req.user, req.body.status || null);
+  await auditLogger.log({ user: req.user, action: 'ticket.restore', entityType: 'ticket', entityId: ticket.id, after: { status: ticket.status }, req });
+
+  const recipients = [ticket.clientUserId, ticket.assignedTechnicianId].filter(Boolean);
+  await notificationService.notify(recipients, {
+    type: 'ticket_restored', title: `Ticket restored: ${ticket.ticketNumber}`, body: ticket.title, ticketId: ticket.id,
+  });
+
+  if (wantsJson(req)) return res.json({ ticket: await serializeTicket(ticket) });
+  setFlash(req, 'success', `Ticket ${ticket.ticketNumber} was restored.`);
+  res.redirect(`/tickets/${ticket.id}`);
+}
+
 module.exports = {
   serializeTicket,
   list,
+  archiveList,
+  archive,
+  restore,
+  bulkArchive,
   showCreateForm,
   create,
   detail,

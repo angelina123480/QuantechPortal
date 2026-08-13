@@ -9,6 +9,8 @@
   else if (item.type === 'status_change') systemText = 'Status changed from ' + item.fromStatus + ' to ' + item.toStatus;
   else if (item.type === 'priority_change') systemText = 'Priority changed from ' + item.fromPriority + ' to ' + item.toPriority;
   else if (item.type === 'assigned') systemText = item.message;
+  else if (item.type === 'archived') systemText = 'Archived' + (item.message ? ' — ' + item.message : '');
+  else if (item.type === 'restored') systemText = 'Restored from archive';
 %>
 <% if (isBubble) { %>
   <div class="conversation-item <%= isStaffAuthor ? 'is-staff' : '' %> <%= item.internal ? 'is-internal' : '' %>">

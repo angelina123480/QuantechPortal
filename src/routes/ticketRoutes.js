@@ -43,9 +43,11 @@ function handleReplyUpload(req, res, next) {
 router.get('/', requireLogin, asyncHandler(ticketController.list));
 router.get('/new', requireLogin, requireRole(ROLES.CLIENT), asyncHandler(ticketController.showCreateForm));
 router.post('/', requireLogin, requireRole(ROLES.CLIENT), handleCreateUpload, verifyCsrfTokenAfterUpload, asyncHandler(ticketController.create));
-// Registered before the /:id routes below so "bulk" is never captured as an id param.
+// Registered before the /:id routes below so "bulk"/"archive" are never captured as an id param.
 router.post('/bulk/assign', requireLogin, requireStaff, asyncHandler(ticketController.bulkAssign));
 router.post('/bulk/status', requireLogin, requireStaff, asyncHandler(ticketController.bulkStatus));
+router.post('/bulk/archive', requireLogin, requireStaff, asyncHandler(ticketController.bulkArchive));
+router.get('/archive', requireLogin, asyncHandler(ticketController.archiveList));
 
 router.get('/:id', requireLogin, asyncHandler(ticketController.detail));
 router.post('/:id/reply', requireLogin, handleReplyUpload, verifyCsrfTokenAfterUpload, asyncHandler(ticketController.reply));
@@ -57,5 +59,7 @@ router.post('/:id/link', requireLogin, requireStaff, requirePermission('merge_ti
 router.post('/:id/rating', requireLogin, requireRole(ROLES.CLIENT), asyncHandler(ticketController.rate));
 router.post('/:id/close', requireLogin, asyncHandler(ticketController.close));
 router.post('/:id/reopen', requireLogin, asyncHandler(ticketController.reopen));
+router.post('/:id/archive', requireLogin, asyncHandler(ticketController.archive));
+router.post('/:id/restore', requireLogin, requireStaff, asyncHandler(ticketController.restore));
 
 module.exports = router;

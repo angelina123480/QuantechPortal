@@ -252,6 +252,10 @@
 .sla-percent-bar-fill.warning { background: #F0B429; }
 .sla-percent-bar-fill.breached { background: var(--color-danger); }
 
+/* ---------- Archive ---------- */
+.data-table tbody tr.is-archived { opacity: .55; }
+.data-table tbody tr.is-archived:hover { opacity: .85; }
+
 /* ---------- Star rating ---------- */
 .star-rating-display { font-size: 22px; letter-spacing: 2px; color: var(--color-gray-300); }
 .star-rating-display .star.is-filled { color: #F0B429; }

@@ -14,7 +14,7 @@ async function technicianLookup(tickets) {
 
 async function dashboard(req, res) {
   const categories = await categoryModel.listNames();
-  const tickets = await ticketModel.listVisibleTo(req.user);
+  const tickets = await ticketModel.listVisibleTo(req.user, { archived: false });
   await slaEngine.sweep(tickets);
   const stats = ticketModel.computeStats(tickets, categories);
   const techniciansById = await technicianLookup(tickets);

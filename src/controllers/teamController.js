@@ -32,7 +32,7 @@ async function dashboard(req, res) {
 
   const categories = await categoryModel.listNames();
   const members = await userModel.listByTeam(team.id);
-  const tickets = await ticketModel.listVisibleTo(req.user, { teamId: team.id });
+  const tickets = await ticketModel.listVisibleTo(req.user, { teamId: team.id, archived: false });
   await slaEngine.sweep(tickets);
   const stats = ticketModel.computeStats(tickets, categories);
 
@@ -77,7 +77,7 @@ async function sla(req, res) {
     return res.render('team/sla', { title: 'SLA Monitoring', team: null, allTeams, rows: [] });
   }
 
-  const tickets = await ticketModel.listVisibleTo(req.user, { teamId: team.id });
+  const tickets = await ticketModel.listVisibleTo(req.user, { teamId: team.id, archived: false });
   await slaEngine.sweep(tickets);
   const openTickets = tickets.filter((t) => ['Open', 'In Progress', 'Waiting for Client', 'Escalated'].includes(t.status));
   const policies = await slaPolicyModel.asMap();

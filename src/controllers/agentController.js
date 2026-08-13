@@ -6,7 +6,7 @@ const { PRIORITIES } = require('../config/constants');
 
 async function dashboard(req, res) {
   const categories = await categoryModel.listNames();
-  const myTickets = await ticketModel.listVisibleTo(req.user, { assignedTechnicianId: req.user.id });
+  const myTickets = await ticketModel.listVisibleTo(req.user, { assignedTechnicianId: req.user.id, archived: false });
   await slaEngine.sweep(myTickets);
   const stats = ticketModel.computeStats(myTickets, categories);
 

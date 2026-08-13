@@ -23,18 +23,22 @@
       <%- include('../partials/priority-badge', { priority: ticket.priority }) %>
       <%- include('../partials/status-badge', { status: ticket.status }) %>
       <span class="badge badge-neutral"><%= ticket.category %></span>
+      <% if (ticket.isArchived) { %><span class="badge badge-neutral">Archived</span><% } %>
     </div>
   </div>
   <% if (!isStaff) { %>
     <div class="page-header-actions">
-      <% if (ticket.status === 'Resolved') { %>
+      <% if (ticket.status === 'Resolved' && !ticket.isArchived) { %>
         <form action="/tickets/<%= ticket.id %>/close" method="POST" class="js-confirm" data-confirm="Close this ticket? You can reopen it later if the issue persists.">
           <button type="submit" class="btn btn-primary">Close Ticket</button>
         </form>
       <% } %>
-      <% if (['Resolved', 'Closed'].includes(ticket.status)) { %>
+      <% if (['Resolved', 'Closed'].includes(ticket.status) && !ticket.isArchived) { %>
         <form action="/tickets/<%= ticket.id %>/reopen" method="POST" class="js-confirm" data-confirm="Reopen this ticket? QuanTech will be notified.">
           <button type="submit" class="btn btn-secondary">Reopen Ticket</button>
+        </form>
+        <form action="/tickets/<%= ticket.id %>/archive" method="POST" class="js-confirm" data-confirm="Archive this ticket? You can find it later under Archived Tickets.">
+          <button type="submit" class="btn btn-secondary">Archive Ticket</button>
         </form>
       <% } %>
     </div>
@@ -43,6 +47,15 @@
       <% if (!['Escalated', 'Resolved', 'Closed'].includes(ticket.status)) { %>
         <form action="/tickets/<%= ticket.id %>/escalate" method="POST" class="js-confirm" data-confirm="Escalate this ticket to the team leader?">
           <button type="submit" class="btn btn-secondary">Escalate</button>
+        </form>
+      <% } %>
+      <% if (ticket.isArchived) { %>
+        <form action="/tickets/<%= ticket.id %>/restore" method="POST" class="js-confirm" data-confirm="Restore this ticket back to the active workspace?">
+          <button type="submit" class="btn btn-secondary">Restore Ticket</button>
+        </form>
+      <% } else if (['Resolved', 'Closed'].includes(ticket.status)) { %>
+        <form action="/tickets/<%= ticket.id %>/archive" method="POST" class="js-confirm" data-confirm="Archive this ticket? It will move out of the active ticket list.">
+          <button type="submit" class="btn btn-secondary">Archive Ticket</button>
         </form>
       <% } %>
       <button type="button" class="btn btn-ghost" data-modal-target="linkTicketModal">Link / Merge</button>
@@ -230,6 +243,12 @@
             <span class="meta-row-label">Last updated</span>
             <span class="meta-row-value"><%= new Date(ticket.updatedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) %></span>
           </div>
+          <% if (ticket.isArchived) { %>
+          <div class="meta-row">
+            <span class="meta-row-label">Archived</span>
+            <span class="meta-row-value"><%= new Date(ticket.archivedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
+          </div>
+          <% } %>
           <div class="meta-row">
             <span class="meta-row-label">SLA target</span>
             <span class="meta-row-value">

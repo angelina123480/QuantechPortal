@@ -11,7 +11,7 @@ async function index(req, res) {
   }
 
   const categories = await categoryModel.listNames();
-  const tickets = await ticketModel.listVisibleTo(req.user);
+  const tickets = await ticketModel.listVisibleTo(req.user, { archived: false });
   const stats = ticketModel.computeStats(tickets, categories);
   const openTickets = tickets.filter((t) => t.status === 'Open');
   const awaitingResponse = tickets.filter((t) => t.status === 'Waiting for Client');

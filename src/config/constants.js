@@ -53,6 +53,7 @@ const NOTIFICATION_TYPES = [
   'sla_breached',
   'ticket_resolved',
   'ticket_closed',
+  'ticket_restored',
 ];
 
 const TICKET_LINK_TYPES = ['duplicate', 'related', 'parent'];

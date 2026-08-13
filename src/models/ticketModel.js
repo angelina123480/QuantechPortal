@@ -33,6 +33,12 @@ function mapTicketRow(row) {
     resolvedAt: row.resolved_at,
     closedAt: row.closed_at,
     firstResponseAt: row.first_response_at,
+    isArchived: row.is_archived,
+    archivedAt: row.archived_at,
+    archivedBy: row.archived_by,
+    archiveReason: row.archive_reason,
+    restoredAt: row.restored_at,
+    restoredBy: row.restored_by,
     attachments: [],
     history: [],
   };
@@ -137,6 +143,12 @@ function buildFilterClauses(user, filters) {
   }
   if (filters.dateFrom) addClause('created_at >= ?', filters.dateFrom);
   if (filters.dateTo) addClause('created_at <= ?', filters.dateTo);
+  // Tri-state: omitted means "no restriction" so every existing caller keeps
+  // seeing archived + active tickets exactly as before this filter existed.
+  if (filters.archived === true) clauses.push('is_archived = TRUE');
+  else if (filters.archived === false) clauses.push('is_archived = FALSE');
+  if (filters.archivedFrom) addClause('archived_at >= ?', filters.archivedFrom);
+  if (filters.archivedTo) addClause('archived_at <= ?', filters.archivedTo);
   if (filters.search) {
     const q = `%${filters.search.trim().toLowerCase()}%`;
     params.push(q);
@@ -372,6 +384,55 @@ async function reopenTicket(ticket, author) {
   return changeStatus(ticket, author, 'Open');
 }
 
+const ARCHIVABLE_STATUSES = ['Resolved', 'Closed'];
+
+/**
+ * Archiving is orthogonal to status — it flips a flag on the existing row
+ * rather than creating a separate record or status, so history, attachments,
+ * SLA data, and ratings are untouched.
+ */
+async function archive(ticket, author, reason) {
+  if (!ARCHIVABLE_STATUSES.includes(ticket.status)) {
+    throw Object.assign(new Error(`Only ${ARCHIVABLE_STATUSES.join('/')} tickets can be archived.`), { code: 'NOT_ELIGIBLE' });
+  }
+  const now = new Date();
+  ticket.isArchived = true;
+  ticket.archivedAt = now;
+  ticket.archivedBy = author.id;
+  ticket.archiveReason = reason || null;
+  ticket.updatedAt = now;
+
+  await pool.query(
+    `UPDATE tickets SET is_archived = TRUE, archived_at = $1, archived_by = $2, archive_reason = $3, archive_type = 'manual', updated_at = $1 WHERE id = $4`,
+    [now, author.id, ticket.archiveReason, ticket.id]
+  );
+  await insertHistory(ticket, { type: 'archived', author, message: reason || null });
+  return ticket;
+}
+
+/**
+ * Restoring does not force status back to Open — it preserves whatever
+ * status the ticket had when archived unless `status` is explicitly given.
+ */
+async function restore(ticket, author, status) {
+  const now = new Date();
+  ticket.isArchived = false;
+  ticket.restoredAt = now;
+  ticket.restoredBy = author.id;
+  ticket.updatedAt = now;
+
+  await pool.query(
+    `UPDATE tickets SET is_archived = FALSE, restored_at = $1, restored_by = $2, updated_at = $1 WHERE id = $3`,
+    [now, author.id, ticket.id]
+  );
+  await insertHistory(ticket, { type: 'restored', author });
+
+  if (status && STATUSES.includes(status) && status !== ticket.status) {
+    await changeStatus(ticket, author, status);
+  }
+  return ticket;
+}
+
 function computeStats(tickets, categories = []) {
   const stats = {
     total: tickets.length,
@@ -419,6 +480,8 @@ module.exports = {
   escalate,
   closeTicket,
   reopenTicket,
+  archive,
+  restore,
   computeStats,
   canAccess,
   isOverdue,

@@ -1,0 +1,87 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Archived Tickets</h1>
+    <p><%= isStaff ? 'Resolved and closed tickets that have been archived out of the active workspace.' : 'Your resolved or closed tickets that you\'ve archived.' %></p>
+  </div>
+  <div class="page-header-actions">
+    <a href="/tickets" class="btn btn-secondary">Back to Tickets</a>
+  </div>
+</div>
+
+<form class="table-toolbar" id="archiveFilterForm" method="GET">
+  <div class="table-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" name="q" placeholder="Search by ticket #, title, or company..." value="<%= query.q || '' %>">
+  </div>
+  <select name="status" class="filter-select auto-submit">
+    <option value="">All statuses</option>
+    <% statuses.forEach(function(s) { %><option value="<%= s %>" <%= query.status === s ? 'selected' : '' %>><%= s %></option><% }) %>
+  </select>
+  <select name="priority" class="filter-select auto-submit">
+    <option value="">All priorities</option>
+    <% priorities.forEach(function(p) { %><option value="<%= p %>" <%= query.priority === p ? 'selected' : '' %>><%= p %></option><% }) %>
+  </select>
+  <select name="category" class="filter-select auto-submit">
+    <option value="">All categories</option>
+    <% categories.forEach(function(c) { %><option value="<%= c %>" <%= query.category === c ? 'selected' : '' %>><%= c %></option><% }) %>
+  </select>
+  <input type="date" name="archivedFrom" class="filter-select" value="<%= query.archivedFrom || '' %>" title="Archived from">
+  <input type="date" name="archivedTo" class="filter-select" value="<%= query.archivedTo || '' %>" title="Archived to">
+  <button type="submit" class="btn btn-secondary">Search</button>
+</form>
+
+<div class="table-wrap">
+  <table class="data-table is-stackable" id="archiveTable">
+    <thead>
+      <tr>
+        <th>Ticket #</th>
+        <th>Subject</th>
+        <% if (isStaff) { %><th>Company</th><% } %>
+        <th>Category</th>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Archived On</th>
+        <th>Archived By</th>
+        <% if (isStaff) { %><th></th><% } %>
+      </tr>
+    </thead>
+    <tbody>
+      <% tickets.forEach(function(ticket) { %>
+        <tr class="is-archived">
+          <td data-label="Ticket #"><a href="/tickets/<%= ticket.id %>" class="ticket-number-cell"><%= ticket.ticketNumber %></a></td>
+          <td data-label="Subject"><a href="/tickets/<%= ticket.id %>" class="ticket-title-link"><%= ticket.title %></a></td>
+          <% if (isStaff) { %><td data-label="Company"><%= ticket.company %></td><% } %>
+          <td data-label="Category"><%= ticket.category %></td>
+          <td data-label="Priority"><%- include('../partials/priority-badge', { priority: ticket.priority }) %></td>
+          <td data-label="Status"><%- include('../partials/status-badge', { status: ticket.status }) %></td>
+          <td data-label="Archived On"><%= new Date(ticket.archivedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+          <td data-label="Archived By"><%= (ticket.archivedBy && archivedByName[ticket.archivedBy]) || 'System' %></td>
+          <% if (isStaff) { %>
+            <td data-label="">
+              <form action="/tickets/<%= ticket.id %>/restore" method="POST" class="js-confirm" data-confirm="Restore this ticket back to the active workspace?">
+                <button type="submit" class="btn btn-secondary btn-sm">Restore</button>
+              </form>
+            </td>
+          <% } %>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <div class="table-empty-state" <%= tickets.length ? 'hidden' : '' %>>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/></svg>
+    <p>No archived tickets<%= (query.q || query.status || query.priority || query.category || query.archivedFrom || query.archivedTo) ? ' match your filters.' : ' yet.' %></p>
+  </div>
+</div>
+<div class="flex justify-between items-center mt-sm">
+  <p class="table-row-count"><%= total %> ticket<%= total === 1 ? '' : 's' %> archived &middot; page <%= page %> of <%= totalPages %></p>
+  <% if (totalPages > 1) { %>
+    <div class="flex gap-sm">
+      <% if (page > 1) { %><a class="btn btn-secondary btn-sm" href="?<%= new URLSearchParams(Object.assign({}, query, { page: page - 1 })).toString() %>">Previous</a><% } %>
+      <% if (page < totalPages) { %><a class="btn btn-secondary btn-sm" href="?<%= new URLSearchParams(Object.assign({}, query, { page: page + 1 })).toString() %>">Next</a><% } %>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../partials/layout-end') %>
