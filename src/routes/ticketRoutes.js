@@ -7,7 +7,7 @@ const { verifyCsrfTokenAfterUpload } = require('../middleware/csrf');
 const { upload } = require('../middleware/upload');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { setFlash } = require('../utils/flash');
-const { ROLES, MAX_UPLOAD_FILES, PRIORITIES } = require('../config/constants');
+const { CLIENT_ROLES, MAX_UPLOAD_FILES, PRIORITIES } = require('../config/constants');
 
 const router = express.Router();
 
@@ -41,8 +41,8 @@ function handleReplyUpload(req, res, next) {
 }
 
 router.get('/', requireLogin, asyncHandler(ticketController.list));
-router.get('/new', requireLogin, requireRole(ROLES.CLIENT), asyncHandler(ticketController.showCreateForm));
-router.post('/', requireLogin, requireRole(ROLES.CLIENT), handleCreateUpload, verifyCsrfTokenAfterUpload, asyncHandler(ticketController.create));
+router.get('/new', requireLogin, requireRole(...CLIENT_ROLES), asyncHandler(ticketController.showCreateForm));
+router.post('/', requireLogin, requireRole(...CLIENT_ROLES), handleCreateUpload, verifyCsrfTokenAfterUpload, asyncHandler(ticketController.create));
 // Registered before the /:id routes below so "bulk"/"archive" are never captured as an id param.
 router.post('/bulk/assign', requireLogin, requireStaff, asyncHandler(ticketController.bulkAssign));
 router.post('/bulk/status', requireLogin, requireStaff, asyncHandler(ticketController.bulkStatus));
@@ -56,7 +56,7 @@ router.post('/:id/priority', requireLogin, requireStaff, asyncHandler(ticketCont
 router.post('/:id/assign', requireLogin, requireStaff, asyncHandler(ticketController.assign));
 router.post('/:id/escalate', requireLogin, requireStaff, requirePermission('escalate_tickets'), asyncHandler(ticketController.escalate));
 router.post('/:id/link', requireLogin, requireStaff, requirePermission('merge_tickets'), asyncHandler(ticketController.link));
-router.post('/:id/rating', requireLogin, requireRole(ROLES.CLIENT), asyncHandler(ticketController.rate));
+router.post('/:id/rating', requireLogin, requireRole(...CLIENT_ROLES), asyncHandler(ticketController.rate));
 router.post('/:id/close', requireLogin, asyncHandler(ticketController.close));
 router.post('/:id/reopen', requireLogin, asyncHandler(ticketController.reopen));
 router.post('/:id/archive', requireLogin, asyncHandler(ticketController.archive));

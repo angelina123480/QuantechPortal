@@ -11,16 +11,17 @@ const { buildBarData, buildStatusDonut } = require('../utils/chartData');
 const { ROLES, PRIORITIES, STATUSES } = require('../config/constants');
 
 // Team leaders see the team they lead; agents see their own team read-only;
-// admins don't lead a team but can inspect any team's view via ?teamId=.
+// admins (and super admins) don't lead a team but can inspect any team's
+// view via ?teamId=.
 async function resolveTeam(req) {
-  if (req.user.role === ROLES.ADMIN) return req.query.teamId ? teamModel.findById(req.query.teamId) : null;
+  if (userModel.isAdmin(req.user)) return req.query.teamId ? teamModel.findById(req.query.teamId) : null;
   if (req.user.role === ROLES.AGENT) return req.user.teamId ? teamModel.findById(req.user.teamId) : null;
   return teamModel.findByLeadUserId(req.user.id);
 }
 
 async function dashboard(req, res) {
   const team = await resolveTeam(req);
-  const allTeams = req.user.role === 'admin' ? await teamModel.list() : [];
+  const allTeams = userModel.isAdmin(req.user) ? await teamModel.list() : [];
 
   if (!team) {
     return res.render('team/dashboard', {
@@ -72,7 +73,7 @@ async function dashboard(req, res) {
 
 async function sla(req, res) {
   const team = await resolveTeam(req);
-  const allTeams = req.user.role === ROLES.ADMIN ? await teamModel.list() : [];
+  const allTeams = userModel.isAdmin(req.user) ? await teamModel.list() : [];
   if (!team) {
     return res.render('team/sla', { title: 'SLA Monitoring', team: null, allTeams, rows: [] });
   }
@@ -97,7 +98,7 @@ async function sla(req, res) {
 
 async function escalations(req, res) {
   const team = await resolveTeam(req);
-  const allTeams = req.user.role === ROLES.ADMIN ? await teamModel.list() : [];
+  const allTeams = userModel.isAdmin(req.user) ? await teamModel.list() : [];
   if (!team) {
     return res.render('team/escalations', { title: 'Escalations', team: null, allTeams, items: [] });
   }

@@ -10,6 +10,7 @@ function mapUserRow(row) {
     passwordHash: row.password_hash,
     role: row.role,
     company: row.company,
+    subClientId: row.sub_client_id,
     department: row.department,
     title: row.title,
     phone: row.phone,
@@ -89,8 +90,19 @@ function isManager(user) {
   return !!user && MANAGEMENT_ROLES.includes(user.role);
 }
 
+// "Admin or higher" — matches requireAdmin/res.locals.isAdmin, since super
+// admin is a strict superset of admin. Use isSuperAdmin() below when a check
+// genuinely needs to distinguish the two (e.g. the last-super-admin guard).
 function isAdmin(user) {
-  return !!user && user.role === ROLES.ADMIN;
+  return !!user && (user.role === ROLES.ADMIN || user.role === ROLES.SUPER_ADMIN);
+}
+
+function isSuperAdmin(user) {
+  return !!user && user.role === ROLES.SUPER_ADMIN;
+}
+
+function isEndClientUser(user) {
+  return !!user && user.role === ROLES.END_CLIENT_USER;
 }
 
 async function create(data) {
@@ -98,10 +110,10 @@ async function create(data) {
   const id = uuidv4();
   const passwordHash = bcrypt.hashSync(data.password, 10);
   const res = await pool.query(
-    `INSERT INTO users (id, name, email, password_hash, role, company, department, title, phone, notification_prefs, created_at, team_id, is_active)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),$11,$12) RETURNING *`,
+    `INSERT INTO users (id, name, email, password_hash, role, company, sub_client_id, department, title, phone, notification_prefs, created_at, team_id, is_active)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now(),$12,$13) RETURNING *`,
     [
-      id, data.name, data.email.trim().toLowerCase(), passwordHash, data.role, data.company,
+      id, data.name, data.email.trim().toLowerCase(), passwordHash, data.role, data.company, data.subClientId || null,
       data.department || '', data.title || '', data.phone || null,
       JSON.stringify({ emailOnReply: true, emailOnStatusChange: true, emailOnAssignment: data.role !== ROLES.CLIENT }),
       data.teamId || null, data.isActive !== false,
@@ -110,8 +122,11 @@ async function create(data) {
   return mapUserRow(res.rows[0]);
 }
 
+// Self-service only — deliberately excludes company/sub_client_id/role.
+// Reassigning what data a user can see is an admin action (adminUpdate),
+// never something a user can do to themselves.
 async function updateProfile(id, updates) {
-  const allowed = ['name', 'phone', 'department', 'company'];
+  const allowed = ['name', 'phone', 'department'];
   const sets = [];
   const params = [];
 
@@ -134,7 +149,7 @@ async function updateProfile(id, updates) {
 // Admin user-management update — role/team/active status, unlike updateProfile
 // which is the self-service subset a logged-in user can change about themselves.
 async function adminUpdate(id, updates) {
-  const allowed = { role: 'role', teamId: 'team_id', company: 'company', department: 'department', title: 'title', isActive: 'is_active', name: 'name', phone: 'phone' };
+  const allowed = { role: 'role', teamId: 'team_id', company: 'company', subClientId: 'sub_client_id', department: 'department', title: 'title', isActive: 'is_active', name: 'name', phone: 'phone' };
   const sets = [];
   const params = [];
   for (const [key, column] of Object.entries(allowed)) {
@@ -185,6 +200,8 @@ module.exports = {
   isClient,
   isManager,
   isAdmin,
+  isSuperAdmin,
+  isEndClientUser,
   create,
   updateProfile,
   adminUpdate,

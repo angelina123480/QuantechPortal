@@ -20,6 +20,7 @@ function mapTicketRow(row) {
     status: row.status,
     affectedService: row.affected_service,
     company: row.company,
+    subClientId: row.sub_client_id,
     clientDepartment: row.client_department,
     contactName: row.contact_name,
     contactEmail: row.contact_email,
@@ -109,6 +110,10 @@ async function findById(id) {
 function canAccess(user, ticket) {
   if (!user || !ticket) return false;
   if (userModel.isStaff(user)) return true;
+  // End-client users are scoped to just their sub-client (branch), never the
+  // whole parent company; client/client_admin see the whole company, same as
+  // before sub-clients existed.
+  if (user.subClientId) return ticket.subClientId === user.subClientId;
   return ticket.company === user.company;
 }
 
@@ -127,7 +132,8 @@ function buildFilterClauses(user, filters) {
   }
 
   if (!userModel.isStaff(user)) {
-    addClause('company = ?', user.company);
+    if (user.subClientId) addClause('sub_client_id = ?', user.subClientId);
+    else addClause('company = ?', user.company);
   }
 
   if (filters.status) addClause('status = ?', filters.status);
@@ -212,12 +218,12 @@ async function create(data, clientUser, attachments = []) {
   await pool.query(
     `INSERT INTO tickets (
        id, ticket_number, title, description, category, subcategory_id, priority, status,
-       affected_service, company, client_department, contact_name, contact_email, contact_phone,
+       affected_service, company, sub_client_id, client_department, contact_name, contact_email, contact_phone,
        client_user_id, assigned_technician_id, team_id, due_at, created_at, updated_at
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,'Open',$8,$9,$10,$11,$12,$13,$14,NULL,$15,$16,$17,$17)`,
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,'Open',$8,$9,$10,$11,$12,$13,$14,$15,NULL,$16,$17,$18,$18)`,
     [
       id, ticketNumber, data.title, data.description, category, data.subcategoryId || null, priority,
-      data.affectedService || category, clientUser.company, data.clientDepartment || clientUser.department,
+      data.affectedService || category, clientUser.company, clientUser.subClientId || null, data.clientDepartment || clientUser.department,
       data.contactName || clientUser.name, data.contactEmail || clientUser.email, data.contactPhone || clientUser.phone,
       clientUser.id, data.teamId || null, dueAt, now,
     ]

@@ -5,7 +5,7 @@
     <h1>SLA Monitoring</h1>
     <p><%= team ? team.name + ' — open tickets sorted by SLA urgency.' : "You don't currently have a team." %></p>
   </div>
-  <% if (currentUser.role === 'admin' && allTeams.length) { %>
+  <% if (isAdmin && allTeams.length) { %>
     <div class="page-header-actions">
       <form method="GET" class="flex gap-sm">
         <select name="teamId" class="filter-select auto-submit">

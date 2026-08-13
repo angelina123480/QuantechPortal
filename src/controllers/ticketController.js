@@ -86,7 +86,7 @@ async function list(req, res) {
   const { tickets: rawTickets, total, page, pageSize } = await ticketModel.listVisibleTo(req.user, filters);
   const tickets = await serializeTickets(rawTickets);
   res.render('tickets/list', {
-    title: req.user.role === 'client' ? 'My Tickets' : 'All Tickets',
+    title: userModel.isStaff(req.user) ? 'All Tickets' : 'My Tickets',
     tickets,
     categories,
     priorities: PRIORITIES,

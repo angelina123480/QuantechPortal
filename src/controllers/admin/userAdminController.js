@@ -1,51 +1,86 @@
 const userModel = require('../../models/userModel');
 const teamModel = require('../../models/teamModel');
 const companyModel = require('../../models/companyModel');
+const subClientModel = require('../../models/subClientModel');
 const auditLogger = require('../../services/auditLogger');
 const { setFlash } = require('../../utils/flash');
 const { ROLES, ROLE_LABELS } = require('../../config/constants');
+
+async function loadFormOptions(filters = {}) {
+  const [users, teams, companies, subClients] = await Promise.all([
+    userModel.listAll(filters), teamModel.list(), companyModel.list(), subClientModel.listAll(),
+  ]);
+  return { users, teams, companies, subClients };
+}
 
 async function index(req, res) {
   const filters = {};
   if (req.query.role) filters.role = req.query.role;
   if (req.query.q) filters.search = req.query.q;
-  const [users, teams, companies] = await Promise.all([userModel.listAll(filters), teamModel.list(), companyModel.list()]);
+  const { users, teams, companies, subClients } = await loadFormOptions(filters);
   res.render('admin/users', {
-    title: 'Users', users, teams, companies, roles: Object.values(ROLES), roleLabels: ROLE_LABELS,
+    title: 'Users', users, teams, companies, subClients, roles: Object.values(ROLES), roleLabels: ROLE_LABELS,
     query: req.query, errors: null, formData: {},
   });
 }
 
 async function create(req, res) {
-  const { name, email, password, role, company, department, title, teamId } = req.body;
-  if (!name || !email || !password || password.length < 8 || !role || !company) {
-    const [users, teams, companies] = await Promise.all([userModel.listAll({}), teamModel.list(), companyModel.list()]);
+  const { name, email, password, role, company, subClientId, department, title, teamId } = req.body;
+
+  async function fail(message) {
+    const { users, teams, companies, subClients } = await loadFormOptions({});
     return res.status(400).render('admin/users', {
-      title: 'Users', users, teams, companies, roles: Object.values(ROLES), roleLabels: ROLE_LABELS,
-      query: {}, errors: { form: 'Name, email, an 8+ character password, role, and company are required.' }, formData: req.body,
-    });
-  }
-  if (await userModel.findByEmail(email)) {
-    const [users, teams, companies] = await Promise.all([userModel.listAll({}), teamModel.list(), companyModel.list()]);
-    return res.status(400).render('admin/users', {
-      title: 'Users', users, teams, companies, roles: Object.values(ROLES), roleLabels: ROLE_LABELS,
-      query: {}, errors: { form: 'A user with that email already exists.' }, formData: req.body,
+      title: 'Users', users, teams, companies, subClients, roles: Object.values(ROLES), roleLabels: ROLE_LABELS,
+      query: {}, errors: { form: message }, formData: req.body,
     });
   }
 
-  const user = await userModel.create({ name, email, password, role, company, department, title, teamId: teamId || null });
+  if (!name || !email || !password || password.length < 8 || !role || !company) {
+    return fail('Name, email, an 8+ character password, role, and company are required.');
+  }
+  if (!Object.values(ROLES).includes(role)) {
+    return fail('That is not a valid role.');
+  }
+  if (!(await companyModel.findByName(company))) {
+    return fail('That is not a valid company.');
+  }
+  if (await userModel.findByEmail(email)) {
+    return fail('A user with that email already exists.');
+  }
+
+  const user = await userModel.create({ name, email, password, role, company, subClientId: subClientId || null, department, title, teamId: teamId || null });
   await auditLogger.log({ user: req.user, action: 'user.create', entityType: 'user', entityId: user.id, after: { role, company }, req });
   setFlash(req, 'success', `${user.name} was created.`);
   res.redirect('/admin/users');
 }
 
 async function update(req, res) {
-  const { role, teamId, company, department, title, name, phone, isActive } = req.body;
+  const { role, teamId, company, subClientId, department, title, name, phone, isActive } = req.body;
   const before = await userModel.findById(req.params.id);
   if (!before) return res.status(404).render('errors/404', { title: 'Not found' });
 
+  if (role !== undefined && !Object.values(ROLES).includes(role)) {
+    setFlash(req, 'error', 'That is not a valid role.');
+    return res.redirect('/admin/users');
+  }
+  if (company !== undefined && !(await companyModel.findByName(company))) {
+    setFlash(req, 'error', 'That is not a valid company.');
+    return res.redirect('/admin/users');
+  }
+  // Without this, an admin could demote/deactivate every super admin
+  // (including their own, from another tab/session) and lock everyone out
+  // of system-level configuration with no way back short of a direct
+  // database edit.
+  if (before.role === ROLES.SUPER_ADMIN && (role !== ROLES.SUPER_ADMIN || isActive !== 'on')) {
+    const activeSuperAdmins = (await userModel.listAll({ role: ROLES.SUPER_ADMIN })).filter((u) => u.isActive);
+    if (activeSuperAdmins.length <= 1) {
+      setFlash(req, 'error', 'You can\'t remove the last active Super Admin.');
+      return res.redirect('/admin/users');
+    }
+  }
+
   await userModel.adminUpdate(req.params.id, {
-    role, teamId: teamId || null, company, department, title, name, phone, isActive: isActive === 'on',
+    role, teamId: teamId || null, company, subClientId: subClientId || null, department, title, name, phone, isActive: isActive === 'on',
   });
   await auditLogger.log({
     user: req.user, action: 'user.update', entityType: 'user', entityId: req.params.id,

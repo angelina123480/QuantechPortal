@@ -9,7 +9,7 @@ const slaAdminController = require('../controllers/admin/slaAdminController');
 const workflowAdminController = require('../controllers/admin/workflowAdminController');
 const permissionAdminController = require('../controllers/admin/permissionAdminController');
 const auditLogController = require('../controllers/admin/auditLogController');
-const { requireLogin, requireAdmin } = require('../middleware/auth');
+const { requireLogin, requireAdmin, requireSuperAdmin } = require('../middleware/auth');
 const { asyncHandler } = require('../utils/asyncHandler');
 
 const router = express.Router();
@@ -27,6 +27,7 @@ router.get('/companies', asyncHandler(companyAdminController.index));
 router.post('/companies', asyncHandler(companyAdminController.create));
 router.get('/companies/:name', asyncHandler(companyAdminController.show));
 router.post('/companies/:name', asyncHandler(companyAdminController.update));
+router.post('/companies/:name/sub-clients', asyncHandler(companyAdminController.createSubClient));
 
 router.get('/departments', asyncHandler(departmentAdminController.index));
 router.post('/departments', asyncHandler(departmentAdminController.create));
@@ -52,8 +53,9 @@ router.post('/workflows', asyncHandler(workflowAdminController.create));
 router.post('/workflows/:id/toggle', asyncHandler(workflowAdminController.toggle));
 router.post('/workflows/:id/delete', asyncHandler(workflowAdminController.remove));
 
-router.get('/permissions', asyncHandler(permissionAdminController.index));
-router.post('/permissions', asyncHandler(permissionAdminController.update));
+// System-level configuration — reserved for Super Admin, not regular admins.
+router.get('/permissions', requireSuperAdmin, asyncHandler(permissionAdminController.index));
+router.post('/permissions', requireSuperAdmin, asyncHandler(permissionAdminController.update));
 
 router.get('/audit-logs', asyncHandler(auditLogController.index));
 

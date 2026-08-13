@@ -5,7 +5,7 @@
     <h1><%= team ? team.name : 'Team Dashboard' %></h1>
     <p><%= team ? "Team-wide ticket operations and workload." : "You don't currently lead a team." %></p>
   </div>
-  <% if (currentUser.role === 'admin' && allTeams.length) { %>
+  <% if (isAdmin && allTeams.length) { %>
     <div class="page-header-actions">
       <form method="GET" class="flex gap-sm">
         <select name="teamId" class="filter-select auto-submit">

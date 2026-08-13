@@ -2,6 +2,7 @@ const companyModel = require('../../models/companyModel');
 const teamModel = require('../../models/teamModel');
 const userModel = require('../../models/userModel');
 const ticketModel = require('../../models/ticketModel');
+const subClientModel = require('../../models/subClientModel');
 const auditLogger = require('../../services/auditLogger');
 const { setFlash } = require('../../utils/flash');
 
@@ -46,18 +47,41 @@ async function show(req, res) {
   const company = await companyModel.findByName(name);
   if (!company) return res.status(404).render('errors/404', { title: 'Not found' });
 
-  const [roster, tickets, teams] = await Promise.all([
+  const [roster, tickets, teams, subClients] = await Promise.all([
     userModel.listAll({ company: name }),
     ticketModel.listVisibleTo(req.user, { company: name }),
     teamModel.list(),
+    subClientModel.list(name),
   ]);
   const team = teams.find((t) => t.id === company.teamId) || null;
   const activeTickets = tickets.filter((t) => ['Open', 'In Progress', 'Waiting for Client', 'Escalated'].includes(t.status));
   const resolvedTickets = tickets.filter((t) => ['Resolved', 'Closed'].includes(t.status));
 
   res.render('admin/company-detail', {
-    title: company.name, company, team, roster, tickets, activeTickets, resolvedTickets,
+    title: company.name, company, team, roster, tickets, activeTickets, resolvedTickets, subClients,
   });
 }
 
-module.exports = { index, create, update, show };
+async function createSubClient(req, res) {
+  const name = decodeURIComponent(req.params.name);
+  const company = await companyModel.findByName(name);
+  if (!company) return res.status(404).render('errors/404', { title: 'Not found' });
+
+  const { name: subName, contactName, contactEmail, contactPhone } = req.body;
+  if (!subName || !subName.trim()) {
+    setFlash(req, 'error', 'Sub-client name is required.');
+    return res.redirect(`/admin/companies/${encodeURIComponent(name)}`);
+  }
+  const existing = await subClientModel.list(name);
+  if (existing.some((s) => s.name.toLowerCase() === subName.trim().toLowerCase())) {
+    setFlash(req, 'error', 'A sub-client with that name already exists for this company.');
+    return res.redirect(`/admin/companies/${encodeURIComponent(name)}`);
+  }
+
+  const subClient = await subClientModel.create({ parentCompany: name, name: subName.trim(), contactName, contactEmail, contactPhone });
+  await auditLogger.log({ user: req.user, action: 'sub_client.create', entityType: 'sub_client', entityId: subClient.id, after: { parentCompany: name, name: subName }, req });
+  setFlash(req, 'success', `${subClient.name} was created.`);
+  res.redirect(`/admin/companies/${encodeURIComponent(name)}`);
+}
+
+module.exports = { index, create, update, show, createSubClient };

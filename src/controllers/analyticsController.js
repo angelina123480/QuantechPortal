@@ -6,10 +6,10 @@ const ticketRatingModel = require('../models/ticketRatingModel');
 const slaPolicyModel = require('../models/slaPolicyModel');
 const slaEngine = require('../services/slaEngine');
 const { buildBarData, buildStatusDonut, buildPriorityDonut, buildTicketsOverTime } = require('../utils/chartData');
-const { ROLES, PRIORITIES, STATUSES } = require('../config/constants');
+const { PRIORITIES, STATUSES } = require('../config/constants');
 
 async function resolveScope(req) {
-  if (req.user.role === ROLES.ADMIN) {
+  if (userModel.isAdmin(req.user)) {
     const teamId = req.query.teamId || null;
     return { teamId, allTeams: await teamModel.list() };
   }
@@ -53,7 +53,7 @@ async function index(req, res) {
 
   res.render('analytics/index', {
     title: 'Analytics',
-    scope: teamId ? (allTeams.find((t) => t.id === teamId) || {}).name : (req.user.role === ROLES.ADMIN ? 'All Teams' : 'Your Team'),
+    scope: teamId ? (allTeams.find((t) => t.id === teamId) || {}).name : (userModel.isAdmin(req.user) ? 'All Teams' : 'Your Team'),
     allTeams,
     teamId,
     stats,

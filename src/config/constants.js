@@ -1,21 +1,34 @@
 const ROLES = {
-  CLIENT: 'client',
-  AGENT: 'agent',
-  TEAM_LEADER: 'team_leader',
+  SUPER_ADMIN: 'super_admin',
   ADMIN: 'admin',
+  TEAM_LEADER: 'team_leader',
+  AGENT: 'agent',
+  CLIENT_ADMIN: 'client_admin',
+  CLIENT: 'client',
+  END_CLIENT_USER: 'end_client_user',
 };
 
 const ROLE_LABELS = {
-  [ROLES.CLIENT]: 'Client',
-  [ROLES.AGENT]: 'Support Agent',
-  [ROLES.TEAM_LEADER]: 'Team Leader',
+  [ROLES.SUPER_ADMIN]: 'Super Admin',
   [ROLES.ADMIN]: 'Administrator',
+  [ROLES.TEAM_LEADER]: 'Team Leader',
+  [ROLES.AGENT]: 'Support Agent',
+  [ROLES.CLIENT_ADMIN]: 'Client Admin',
+  [ROLES.CLIENT]: 'Client User',
+  [ROLES.END_CLIENT_USER]: 'End Client User',
 };
 
-// Every non-client role — used for the coarse client-vs-staff access check.
-const STAFF_ROLES = [ROLES.AGENT, ROLES.TEAM_LEADER, ROLES.ADMIN];
+// Every internal QuanTech role — used for the coarse client-vs-staff access
+// check. Client-side roles (client_admin/client/end_client_user) are never
+// staff, regardless of the "admin" in "client_admin".
+const STAFF_ROLES = [ROLES.AGENT, ROLES.TEAM_LEADER, ROLES.ADMIN, ROLES.SUPER_ADMIN];
+// Every client-side role — anywhere that used to check for exactly
+// ROLES.CLIENT (create/rate a ticket, etc.) needs to accept all three, or
+// client_admin/end_client_user are silently locked out of core client
+// actions despite being client-tier roles.
+const CLIENT_ROLES = [ROLES.CLIENT_ADMIN, ROLES.CLIENT, ROLES.END_CLIENT_USER];
 // Roles that can manage a team (reassign, escalate, monitor SLA/analytics).
-const MANAGEMENT_ROLES = [ROLES.TEAM_LEADER, ROLES.ADMIN];
+const MANAGEMENT_ROLES = [ROLES.TEAM_LEADER, ROLES.ADMIN, ROLES.SUPER_ADMIN];
 
 const PRIORITIES = ['Low', 'Medium', 'High', 'Critical'];
 
@@ -102,6 +115,7 @@ module.exports = {
   ROLES,
   ROLE_LABELS,
   STAFF_ROLES,
+  CLIENT_ROLES,
   MANAGEMENT_ROLES,
   PRIORITIES,
   STATUSES,

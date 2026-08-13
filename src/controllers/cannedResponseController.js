@@ -5,7 +5,7 @@ const permissionModel = require('../models/permissionModel');
 const { setFlash } = require('../utils/flash');
 
 async function canManageOthers(user) {
-  if (user.role === 'admin') return true;
+  if (userModel.isAdmin(user)) return true;
   return permissionModel.roleHasPermission(user.role, 'manage_canned_responses');
 }
 

@@ -4,6 +4,7 @@ const { Client } = require('@neondatabase/serverless');
 const { buildDepartments } = require('../src/data/seed/departments');
 const { buildTeams } = require('../src/data/seed/teams');
 const { buildCompanies } = require('../src/data/seed/companies');
+const { buildSubClients } = require('../src/data/seed/subClients');
 const { buildCategories } = require('../src/data/seed/categories');
 const { buildUsers } = require('../src/data/seed/users');
 const { buildTickets } = require('../src/data/seed/tickets');
@@ -17,7 +18,7 @@ const TABLES_IN_TRUNCATE_ORDER = [
   'audit_logs', 'notifications', 'sla_events', 'escalations', 'ticket_ratings', 'ticket_links',
   'attachments', 'ticket_history', 'tickets', 'assignment_rules', 'canned_responses',
   'password_reset_tokens', 'role_permissions', 'permissions', 'articles', 'subcategories',
-  'categories', 'system_settings', 'sla_policies', 'users', 'teams', 'companies', 'departments',
+  'categories', 'system_settings', 'sla_policies', 'users', 'sub_clients', 'teams', 'companies', 'departments',
 ];
 
 async function seed() {
@@ -53,6 +54,16 @@ async function seed() {
       );
     }
 
+    // ---------- Sub-clients (must exist before users can reference one) ----------
+    const subClients = buildSubClients();
+    console.log(`Inserting ${subClients.length} sub-clients...`);
+    for (const s of subClients) {
+      await client.query(
+        'INSERT INTO sub_clients (id, parent_company, name, contact_name, contact_email, contact_phone, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+        [s.id, s.parentCompany, s.name, s.contactName, s.contactEmail, s.contactPhone, s.createdAt]
+      );
+    }
+
     // ---------- Categories & Subcategories ----------
     const { categories, subcategories } = buildCategories();
     console.log(`Inserting ${categories.length} categories, ${subcategories.length} subcategories...`);
@@ -70,9 +81,9 @@ async function seed() {
     console.log(`Inserting ${users.length} users...`);
     for (const u of users) {
       await client.query(
-        `INSERT INTO users (id, name, email, password_hash, role, company, department, title, phone, notification_prefs, created_at, team_id, is_active)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-        [u.id, u.name, u.email, u.passwordHash, u.role, u.company, u.department, u.title, u.phone, JSON.stringify(u.notificationPrefs), u.createdAt, u.teamId, u.isActive]
+        `INSERT INTO users (id, name, email, password_hash, role, company, sub_client_id, department, title, phone, notification_prefs, created_at, team_id, is_active)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+        [u.id, u.name, u.email, u.passwordHash, u.role, u.company, u.subClientId, u.department, u.title, u.phone, JSON.stringify(u.notificationPrefs), u.createdAt, u.teamId, u.isActive]
       );
     }
 
