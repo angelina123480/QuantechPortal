@@ -35,25 +35,50 @@ Then open **http://localhost:3000**. Demo accounts (shown on the login page):
 | Role | Email | Password |
 |---|---|---|
 | Enterprise client | `rania.saad@abcbank.com` | `QuanTech#2026` |
-| QuanTech technician | `michael.haddad@quantech.com` | `QuanTech#2026` |
+| Support agent | `michael.haddad@quantech.com` | `QuanTech#2026` |
+| Team leader | `rami.abouchakra@quantech.com` | `QuanTech#2026` |
 
-All ten seeded users (5 clients across different companies, 4 technicians, 1
-support manager with the `admin` role) share the same demo password — see
-`src/data/seed/users.js`. Re-running `npm run seed` resets everything (tickets,
-replies, assignments) back to this original demo state.
+23 users are seeded in total (7 enterprise clients across different companies,
+5 team leaders, 10 support agents, 1 admin — see `src/data/seed/users.js`).
+The admin account is intentionally left off the login page and out of the
+shared demo password: `npm run seed` generates it a fresh random password
+every run and prints it once to the console. Re-running `npm run seed` resets
+everything (tickets, replies, assignments) back to the original demo state.
 
 ## What's implemented
 
 - **Auth**: session-based login (bcrypt-hashed passwords, `express-session`
   backed by a `session` table via `connect-pg-simple`, session regenerated on
-  login, role-restricted routes enforced server-side).
-- **Client workflow**: dashboard with live stats/charts, create ticket (with file
-  attachments), My Tickets (search + filter), ticket detail (conversation, reply,
-  close/reopen, live SLA countdown), Knowledge Base, Profile & Settings.
-- **Technician/admin workflow**: technician dashboard with org-wide stats,
-  overdue-ticket tracking, a searchable/filterable all-tickets table with inline
-  technician reassignment, bulk assign/status-change across selected tickets,
-  CSV export, status/priority changes, and internal (client-hidden) notes.
+  login/2FA, role-restricted routes enforced server-side), self-service
+  registration, forgot/reset password via emailed token, and optional TOTP
+  two-factor authentication (`otplib`, QR-code enrollment).
+- **Four roles**: client, support agent, team leader, admin — each with their
+  own dashboard and a permission system (`admin/permissions`) that controls
+  which actions non-admin roles can take (e.g. merging tickets).
+- **Client workflow**: dashboard with live stats/charts, create ticket (with
+  file attachments), My Tickets (search + filter), ticket detail
+  (conversation, reply, close/reopen, live SLA countdown, star rating on
+  resolved/closed tickets), Knowledge Base, notifications, Profile & Settings.
+- **Agent/team-leader/admin workflow**: dashboards with org- or team-scoped
+  stats and charts, overdue-ticket tracking, a searchable/filterable
+  all-tickets table with inline technician reassignment, bulk assign/status
+  change/archive, ticket linking (duplicate/related/parent merge), internal
+  (client-hidden) notes, canned responses, and manual archiving of
+  resolved/closed tickets (`/tickets/archive`) that keeps history and stock
+  data intact without touching the active list.
+- **SLA & escalation engine**: per-priority response/resolution targets,
+  live countdown + breach detection, automatic escalation with notifications
+  to the team leader, and an SLA monitoring view per team.
+- **Automatic assignment**: admin-configured rules
+  (category/priority/department → team/agent) that route new tickets on
+  creation, evaluated in priority order.
+- **Admin console**: manage users, companies, departments, teams,
+  categories/subcategories, SLA policies, assignment rules, and role
+  permissions; full audit log of every mutation (who did what, before/after
+  values, IP) with search/filter.
+- **Analytics & reporting**: cross-org analytics dashboard (trend/status/
+  priority/category/workload/SLA charts), plus a filterable report builder
+  exportable as CSV or PDF.
 - **Dark mode**: toggle in the topbar, respects OS preference by default,
   explicit choice persisted in `localStorage`.
 - **Data**: real Postgres (see `src/data/db.js`, `src/data/migrations/`,
