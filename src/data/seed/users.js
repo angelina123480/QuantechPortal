@@ -1,7 +1,12 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { ROLES } = require('../../config/constants');
 
-// Demo password shown on the login page for every seeded account.
+// Demo password shown on the login page for every seeded account EXCEPT the
+// admin (see buildUsers below) — a category name is enough to run arbitrary
+// JS in every staff dashboard (fixed separately), so a publicly-known admin
+// credential turns that into a zero-effort exploit for anyone reading this
+// file on GitHub.
 const DEMO_PASSWORD = 'QuanTech#2026';
 
 const RAW_USERS = [
@@ -39,12 +44,20 @@ const RAW_USERS = [
 
 function buildUsers() {
   const passwordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
+
+  // Freshly random on every seed run and never stored in source — set
+  // ADMIN_SEED_PASSWORD to pin a known value (e.g. for CI), otherwise it's
+  // printed once below and must be saved from the console output.
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD || crypto.randomBytes(9).toString('base64url');
+  const adminPasswordHash = bcrypt.hashSync(adminPassword, 10);
+  console.log(`\nAdmin password for this seed run: ${adminPassword}\n(save this now — it will not be shown again)\n`);
+
   const now = new Date();
   return RAW_USERS.map((u) => ({
     ...u,
     teamId: u.teamId || null,
     isActive: true,
-    passwordHash,
+    passwordHash: u.role === ROLES.ADMIN ? adminPasswordHash : passwordHash,
     notificationPrefs: {
       emailOnReply: true,
       emailOnStatusChange: true,
