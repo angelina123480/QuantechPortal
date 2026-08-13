@@ -42,6 +42,14 @@ function createApp() {
   // changing the parsed value.
   app.locals.jsonScript = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
 
+  // Safely embeds a JSON value inside a double-quoted HTML attribute (e.g.
+  // data-subclient-map="..."). Escaping order matters: & must go first so it
+  // doesn't double-escape the entities produced by the following replaces.
+  app.locals.jsonAttr = (value) => JSON.stringify(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
   // Every response here is per-session/personalized — none of it should be
   // cached. This also matters on Vercel specifically: its edge defaults to
   // marking function responses publicly cacheable, and a publicly-cacheable
