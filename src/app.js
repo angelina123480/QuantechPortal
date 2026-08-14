@@ -19,6 +19,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const kbRoutes = require('./routes/kbRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const companyRoutes = require('./routes/companyRoutes');
 const agentRoutes = require('./routes/agentRoutes');
 const teamRoutes = require('./routes/teamRoutes');
 const cannedResponseRoutes = require('./routes/cannedResponseRoutes');
@@ -111,6 +112,7 @@ function createApp() {
   app.use('/kb', kbRoutes);
   app.use('/profile', profileRoutes);
   app.use('/admin', adminRoutes);
+  app.use('/company', companyRoutes);
   app.use('/agent', agentRoutes);
   app.use('/team', teamRoutes);
   app.use('/canned-responses', cannedResponseRoutes);

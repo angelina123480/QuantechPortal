@@ -1,4 +1,3 @@
-const crypto = require('crypto');
 const userModel = require('../../models/userModel');
 const teamModel = require('../../models/teamModel');
 const companyModel = require('../../models/companyModel');
@@ -6,13 +5,10 @@ const subClientModel = require('../../models/subClientModel');
 const ticketModel = require('../../models/ticketModel');
 const projectModel = require('../../models/projectModel');
 const auditLogModel = require('../../models/auditLogModel');
-const passwordResetModel = require('../../models/passwordResetModel');
-const emailService = require('../../services/emailService');
 const auditLogger = require('../../services/auditLogger');
+const userInviteService = require('../../services/userInviteService');
 const { setFlash } = require('../../utils/flash');
 const { ROLES, ROLE_LABELS, STAFF_ROLES, CLIENT_ROLES } = require('../../config/constants');
-
-const INVITE_TTL_MINUTES = 7 * 24 * 60; // 7 days
 
 async function loadFormOptions() {
   const [teams, companies, activeCompanies, subClients] = await Promise.all([
@@ -59,21 +55,9 @@ async function create(req, res) {
     // Client accounts are invited by email rather than given a password
     // directly — this is what "closing self-registration" was for: proving
     // the recipient controls that inbox before granting portal access.
-    // The placeholder password is random and never shown to anyone; login
-    // stays impossible until the invite link is used.
-    const placeholderPassword = crypto.randomBytes(32).toString('hex');
-    const user = await userModel.create({
-      name, email, password: placeholderPassword, role, company, subClientId: subClientId || null,
-      department, title, teamId: teamId || null, invited: true,
+    const user = await userInviteService.inviteUser({
+      name, email, role, company, subClientId: subClientId || null, department, title, teamId: teamId || null, req,
     });
-    const token = await passwordResetModel.create(user.id, { ttlMinutes: INVITE_TTL_MINUTES, purpose: 'invite' });
-    const inviteUrl = `${req.protocol}://${req.get('host')}/reset-password/${token}`;
-    await emailService.send({
-      to: user.email,
-      subject: 'You’re invited to the QuanTech Support Portal',
-      text: `${req.user.name} has added you to the QuanTech Support Portal for ${company}. Set your password to get started (this link expires in 7 days): ${inviteUrl}\n\nIf you weren't expecting this, you can ignore this email.`,
-    });
-    await auditLogger.log({ user: req.user, action: 'user.invite', entityType: 'user', entityId: user.id, after: { role, company }, req });
     setFlash(req, 'success', `${user.name} was invited — an email was sent to ${user.email} with a link to set their password.`);
   } else {
     if (!password || password.length < 8) return fail('Name, email, an 8+ character password, role, and company are required.');

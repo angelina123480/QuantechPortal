@@ -1,0 +1,94 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1><%= user.name %></h1>
+    <p>
+      <span class="badge badge-neutral"><%= roleLabels[user.role] %></span>
+      <%- include('../partials/status-badge', { status: user.isActive ? 'Active' : 'Deactivated' }) %>
+    </p>
+  </div>
+  <div class="page-header-actions">
+    <form action="/company/users/<%= user.id %>/status" method="POST">
+      <input type="hidden" name="active" value="<%= user.isActive ? '0' : '1' %>">
+      <input type="hidden" name="returnTo" value="/company/users/<%= user.id %>">
+      <button type="submit" class="btn btn-secondary"><%= user.isActive ? 'Deactivate' : 'Activate' %></button>
+    </form>
+    <form action="/company/users/<%= user.id %>/resend-invite" method="POST" onsubmit="return confirm('Send a password link to this user?');">
+      <input type="hidden" name="returnTo" value="/company/users/<%= user.id %>">
+      <button type="submit" class="btn btn-ghost">Resend Invite</button>
+    </form>
+    <a href="/company/users" class="btn btn-ghost">Back to Users</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card is-accent-neutral">
+    <div class="stat-card-top"><span class="stat-card-label">Company tickets</span></div>
+    <div class="stat-card-value"><%= ticketCount %></div>
+  </div>
+  <div class="stat-card is-accent-info">
+    <div class="stat-card-top"><span class="stat-card-label">Company projects</span></div>
+    <div class="stat-card-value"><%= projectCount %></div>
+  </div>
+</div>
+
+<div class="card mb-lg">
+  <div class="card-header"><h3>Profile</h3></div>
+  <div class="card-body">
+    <div class="meta-row"><span class="meta-row-label">Email</span><span><%= user.email %></span></div>
+    <div class="meta-row"><span class="meta-row-label">Phone</span><span><%= user.phone || '—' %></span></div>
+    <div class="meta-row"><span class="meta-row-label">Company</span><span><%= user.company %></span></div>
+    <div class="meta-row"><span class="meta-row-label">Sub-client</span><span><%= subClient ? subClient.name : '—' %></span></div>
+    <div class="meta-row"><span class="meta-row-label">Department</span><span><%= user.department || '—' %></span></div>
+    <div class="meta-row"><span class="meta-row-label">Title</span><span><%= user.title || '—' %></span></div>
+    <div class="meta-row"><span class="meta-row-label">Created</span><span><%= new Date(user.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></span></div>
+    <% if (user.invitedAt) { %>
+      <div class="meta-row"><span class="meta-row-label">Invited</span><span><%= new Date(user.invitedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></span></div>
+    <% } %>
+
+    <details class="mt-md">
+      <summary class="btn btn-secondary btn-sm">Edit</summary>
+      <form action="/company/users/<%= user.id %>" method="POST" class="mt-sm flex-col gap-sm" style="max-width: 480px;">
+        <input type="text" name="name" value="<%= user.name %>" placeholder="Name">
+        <select name="role">
+          <% roles.forEach(function(r) { %><option value="<%= r %>" <%= user.role === r ? 'selected' : '' %>><%= roleLabels[r] %></option><% }) %>
+        </select>
+        <select name="subClientId">
+          <option value="">No sub-client (whole company)</option>
+          <% subClients.forEach(function(s) { %><option value="<%= s.id %>" <%= user.subClientId === s.id ? 'selected' : '' %>><%= s.name %></option><% }) %>
+        </select>
+        <input type="text" name="department" value="<%= user.department || '' %>" placeholder="Department">
+        <input type="text" name="title" value="<%= user.title || '' %>" placeholder="Title">
+        <input type="hidden" name="isActive" value="<%= user.isActive ? 'on' : '' %>">
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+      </form>
+    </details>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3>Recent Activity</h3></div>
+  <div class="card-body">
+    <% if (activity.length === 0) { %>
+      <p class="text-muted">No recorded activity yet.</p>
+    <% } else { %>
+      <% activity.forEach(function(log) { %>
+        <div class="activity-item">
+          <div class="activity-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </div>
+          <div>
+            <div class="activity-text">
+              <strong><%= log.userName || 'System' %></strong> &middot; <%= log.action %>
+              <% if (log.entityType) { %><span class="text-muted"> (<%= log.entityType %>)</span><% } %>
+            </div>
+            <div class="activity-time"><%= new Date(log.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) %></div>
+          </div>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/layout-end') %>
