@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const pool = require('../data/db');
-const { ROLES, STAFF_ROLES, MANAGEMENT_ROLES } = require('../config/constants');
+const { ROLES, STAFF_ROLES, CLIENT_ROLES, MANAGEMENT_ROLES } = require('../config/constants');
 
 function mapUserRow(row) {
   return {
@@ -20,6 +20,7 @@ function mapUserRow(row) {
     isActive: row.is_active,
     totpEnabled: row.totp_enabled,
     totpSecret: row.totp_secret,
+    invitedAt: row.invited_at,
   };
 }
 
@@ -57,6 +58,12 @@ async function listByTeam(teamId) {
   return res.rows.map(mapUserRow);
 }
 
+/**
+ * filters: { role, company, teamId, subClientId, group ('staff'|'client'), search, page, pageSize }
+ * When filters.page is set, returns { users, total, page, pageSize } instead
+ * of a bare array — same opt-in pagination shape as ticketModel.listVisibleTo
+ * and projectModel.list.
+ */
 async function listAll(filters = {}) {
   const clauses = [];
   const params = [];
@@ -67,6 +74,9 @@ async function listAll(filters = {}) {
   if (filters.role) addClause('role = ?', filters.role);
   if (filters.company) addClause('company = ?', filters.company);
   if (filters.teamId) addClause('team_id = ?', filters.teamId);
+  if (filters.subClientId) addClause('sub_client_id = ?', filters.subClientId);
+  if (filters.group === 'staff') addClause('role = ANY(?)', STAFF_ROLES);
+  else if (filters.group === 'client') addClause('role = ANY(?)', CLIENT_ROLES);
   if (filters.search) {
     const q = `%${filters.search.trim().toLowerCase()}%`;
     params.push(q);
@@ -74,8 +84,27 @@ async function listAll(filters = {}) {
     clauses.push(`(lower(name) LIKE ${p} OR lower(email) LIKE ${p})`);
   }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+
+  if (filters.page) {
+    const pageSize = filters.pageSize || 25;
+    const page = Math.max(1, filters.page);
+    const countRes = await pool.query(`SELECT count(*) AS n FROM users ${where}`, params);
+    const total = Number(countRes.rows[0].n);
+    const pagedParams = [...params, pageSize, (page - 1) * pageSize];
+    const res = await pool.query(
+      `SELECT * FROM users ${where} ORDER BY role ASC, name ASC LIMIT $${pagedParams.length - 1} OFFSET $${pagedParams.length}`,
+      pagedParams
+    );
+    return { users: res.rows.map(mapUserRow), total, page, pageSize };
+  }
+
   const res = await pool.query(`SELECT * FROM users ${where} ORDER BY role ASC, name ASC`, params);
   return res.rows.map(mapUserRow);
+}
+
+async function countsByCompany() {
+  const res = await pool.query('SELECT company, count(*)::int AS n FROM users WHERE company IS NOT NULL GROUP BY company');
+  return Object.fromEntries(res.rows.map((r) => [r.company, r.n]));
 }
 
 function isStaff(user) {
@@ -110,13 +139,13 @@ async function create(data) {
   const id = uuidv4();
   const passwordHash = bcrypt.hashSync(data.password, 10);
   const res = await pool.query(
-    `INSERT INTO users (id, name, email, password_hash, role, company, sub_client_id, department, title, phone, notification_prefs, created_at, team_id, is_active)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now(),$12,$13) RETURNING *`,
+    `INSERT INTO users (id, name, email, password_hash, role, company, sub_client_id, department, title, phone, notification_prefs, created_at, team_id, is_active, invited_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now(),$12,$13,$14) RETURNING *`,
     [
       id, data.name, data.email.trim().toLowerCase(), passwordHash, data.role, data.company, data.subClientId || null,
       data.department || '', data.title || '', data.phone || null,
       JSON.stringify({ emailOnReply: true, emailOnStatusChange: true, emailOnAssignment: data.role !== ROLES.CLIENT }),
-      data.teamId || null, data.isActive !== false,
+      data.teamId || null, data.isActive !== false, data.invited ? new Date() : null,
     ]
   );
   return mapUserRow(res.rows[0]);
@@ -196,6 +225,7 @@ module.exports = {
   listTechnicians,
   listByTeam,
   listAll,
+  countsByCompany,
   isStaff,
   isClient,
   isManager,

@@ -9,6 +9,7 @@ function mapRow(row) {
     contactName: row.contact_name,
     contactEmail: row.contact_email,
     contactPhone: row.contact_phone,
+    isActive: row.is_active,
     createdAt: row.created_at,
   };
 }
@@ -40,4 +41,22 @@ async function create(data) {
   return mapRow(res.rows[0]);
 }
 
-module.exports = { listAll, list, findById, create };
+async function update(id, data) {
+  const res = await pool.query(
+    `UPDATE sub_clients SET name = $1, contact_name = $2, contact_email = $3, contact_phone = $4 WHERE id = $5 RETURNING *`,
+    [data.name, data.contactName || null, data.contactEmail || null, data.contactPhone || null, id]
+  );
+  return res.rows.length ? mapRow(res.rows[0]) : null;
+}
+
+async function setActive(id, isActive) {
+  const res = await pool.query('UPDATE sub_clients SET is_active = $1 WHERE id = $2 RETURNING *', [isActive, id]);
+  return res.rows.length ? mapRow(res.rows[0]) : null;
+}
+
+async function countsByCompany() {
+  const res = await pool.query('SELECT parent_company, count(*)::int AS n FROM sub_clients GROUP BY parent_company');
+  return Object.fromEntries(res.rows.map((r) => [r.parent_company, r.n]));
+}
+
+module.exports = { listAll, list, findById, create, update, setActive, countsByCompany };

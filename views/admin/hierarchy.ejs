@@ -1,0 +1,56 @@
+<%- include('../partials/layout-start') %>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1>Client Hierarchy</h1>
+    <p>Every company, its sub-clients, and the users under each — expand to browse.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <% companies.forEach(function(c) { %>
+      <div class="canned-response-item">
+        <details>
+          <summary>
+            <strong><%= c.name %></strong>
+            <span class="text-muted"><%= (subClientsByCompany[c.name] || []).length %> sub-clients &middot; <%= ((usersByCompany[c.name] || []).length + (subClientsByCompany[c.name] || []).reduce(function(sum, sc) { return sum + (usersBySubClient[sc.id] || []).length; }, 0)) %> users</span>
+            <%- include('../partials/status-badge', { status: c.isActive ? 'Active' : 'Deactivated' }) %>
+          </summary>
+          <div class="mt-sm flex-col gap-sm">
+            <% (subClientsByCompany[c.name] || []).forEach(function(sc) { %>
+              <details style="margin-left: 20px;">
+                <summary>
+                  <%= sc.name %>
+                  <span class="text-muted"><%= (usersBySubClient[sc.id] || []).length %> users</span>
+                  <%- include('../partials/status-badge', { status: sc.isActive ? 'Active' : 'Deactivated' }) %>
+                </summary>
+                <div class="flex-col gap-xs" style="margin-left: 20px; margin-top: 8px;">
+                  <% if ((usersBySubClient[sc.id] || []).length === 0) { %>
+                    <span class="text-muted">No users yet.</span>
+                  <% } %>
+                  <% (usersBySubClient[sc.id] || []).forEach(function(u) { %>
+                    <a href="/admin/users/<%= u.id %>" class="card-link"><%= u.name %> <span class="text-muted">&middot; <%= u.email %></span></a>
+                  <% }) %>
+                </div>
+              </details>
+            <% }) %>
+
+            <% if ((usersByCompany[c.name] || []).length > 0) { %>
+              <p class="form-hint" style="margin-top: 10px;">Company-wide users</p>
+              <div class="flex-col gap-xs" style="margin-left: 20px;">
+                <% usersByCompany[c.name].forEach(function(u) { %>
+                  <a href="/admin/users/<%= u.id %>" class="card-link"><%= u.name %> <span class="badge badge-neutral"><%= u.role %></span> <span class="text-muted">&middot; <%= u.email %></span></a>
+                <% }) %>
+              </div>
+            <% } %>
+
+            <a href="/admin/companies/<%= encodeURIComponent(c.name) %>" class="card-link mt-sm">View company &rarr;</a>
+          </div>
+        </details>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<%- include('../partials/layout-end') %>

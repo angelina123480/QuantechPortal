@@ -102,4 +102,40 @@
 
   window.QT = window.QT || {};
   window.QT.toast = toast;
+
+  // ---------- Conditional "staff only" fields (e.g. temp password on user create) ----------
+  document.querySelectorAll('select[data-staff-roles]').forEach(function (select) {
+    var staffRoles = select.getAttribute('data-staff-roles').split(',');
+    var targets = document.querySelectorAll('[data-staff-only-field]');
+    function toggle() {
+      var isStaff = staffRoles.indexOf(select.value) !== -1;
+      targets.forEach(function (el) {
+        el.style.display = isStaff ? '' : 'none';
+        var input = el.querySelector('input');
+        if (input) input.required = isStaff;
+      });
+    }
+    select.addEventListener('change', toggle);
+    toggle();
+  });
+
+  // ---------- Section-nav tabs (e.g. company detail Overview/Users/Sub-clients/...) ----------
+  document.querySelectorAll('[data-section-tabs]').forEach(function (nav) {
+    var tabs = nav.querySelectorAll('[data-section-tab]');
+    var panels = document.querySelectorAll('[data-section-panel]');
+    function activate(id) {
+      tabs.forEach(function (t) { t.classList.toggle('is-active', t.getAttribute('data-section-tab') === id); });
+      panels.forEach(function (p) { p.hidden = p.getAttribute('data-section-panel') !== id; });
+    }
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function (e) {
+        e.preventDefault();
+        activate(t.getAttribute('data-section-tab'));
+        history.replaceState(null, '', '#' + t.getAttribute('data-section-tab'));
+      });
+    });
+    var initial = (location.hash || '').slice(1);
+    var hasInitial = initial && nav.querySelector('[data-section-tab="' + initial + '"]');
+    activate(hasInitial ? initial : tabs[0].getAttribute('data-section-tab'));
+  });
 })();

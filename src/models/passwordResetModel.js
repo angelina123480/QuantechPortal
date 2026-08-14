@@ -9,13 +9,16 @@ function hashToken(token) {
 }
 
 // Returns the raw token (put in the emailed link) — only the hash is stored.
-async function create(userId) {
+// purpose distinguishes a self-service "reset" from an admin-sent "invite"
+// (see authController's /reset-password/:token, which reads it back to show
+// the right copy) — both consume the exact same table/flow.
+async function create(userId, { ttlMinutes = TOKEN_TTL_MINUTES, purpose = 'reset' } = {}) {
   const token = crypto.randomBytes(32).toString('hex');
   const id = uuidv4();
-  const expiresAt = new Date(Date.now() + TOKEN_TTL_MINUTES * 60 * 1000);
+  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
   await pool.query(
-    'INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, created_at) VALUES ($1,$2,$3,$4,now())',
-    [id, userId, hashToken(token), expiresAt]
+    'INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, purpose, created_at) VALUES ($1,$2,$3,$4,$5,now())',
+    [id, userId, hashToken(token), expiresAt, purpose]
   );
   return token;
 }
@@ -27,7 +30,7 @@ async function findValid(token) {
   );
   if (!res.rows.length) return null;
   const row = res.rows[0];
-  return { id: row.id, userId: row.user_id, expiresAt: row.expires_at };
+  return { id: row.id, userId: row.user_id, expiresAt: row.expires_at, purpose: row.purpose };
 }
 
 async function markUsed(id) {

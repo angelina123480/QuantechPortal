@@ -197,6 +197,10 @@ a.stat-card:hover {
 .badge-status-cancelled,
 .badge-status-archived { background: var(--status-closed-bg); color: var(--status-closed-fg); }
 
+/* Company/sub-client/user active-vs-deactivated — same palette again. */
+.badge-status-active { background: var(--status-resolved-bg); color: var(--status-resolved-fg); }
+.badge-status-deactivated { background: var(--status-closed-bg); color: var(--status-closed-fg); }
+
 .badge-neutral { background: var(--color-gray-100); color: var(--text-secondary); }
 .badge-role-client { background: var(--color-accent-light); color: var(--color-accent-dark); }
 .badge-role-staff { background: var(--color-navy-850); color: var(--text-on-navy); }
@@ -655,3 +659,24 @@ fieldset legend {
   margin-bottom: 14px;
 }
 .section-title-row h2, .section-title-row h3 { margin: 0; }
+
+/* ---------- Section nav (e.g. company detail Overview/Users/Sub-clients/...) ---------- */
+.section-nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.section-nav-item {
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+.section-nav-item:hover { color: var(--text-primary); }
+.section-nav-item.is-active { color: var(--text-primary); border-bottom-color: var(--color-accent); }
+.section-panel[hidden] { display: none; }

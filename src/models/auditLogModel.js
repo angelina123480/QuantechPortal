@@ -23,6 +23,10 @@ async function list(filters = {}) {
     clauses.push(sql.replace('?', `$${params.length}`));
   }
   if (filters.userId) addClause('user_id = ?', filters.userId);
+  if (filters.relatedToUserId) {
+    params.push(filters.relatedToUserId);
+    clauses.push(`(user_id = $${params.length} OR entity_id = $${params.length})`);
+  }
   if (filters.action) addClause('action = ?', filters.action);
   if (filters.entityType) addClause('entity_type = ?', filters.entityType);
   if (filters.dateFrom) addClause('created_at >= ?', filters.dateFrom);

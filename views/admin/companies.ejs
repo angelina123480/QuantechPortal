@@ -48,9 +48,19 @@
   </div>
 </div>
 
+<div class="table-toolbar">
+  <form method="GET">
+    <select name="status" class="filter-select auto-submit">
+      <option value="active" <%= statusFilter === 'active' ? 'selected' : '' %>>Active</option>
+      <option value="inactive" <%= statusFilter === 'inactive' ? 'selected' : '' %>>Deactivated</option>
+      <option value="all" <%= statusFilter === 'all' ? 'selected' : '' %>>All</option>
+    </select>
+  </form>
+</div>
+
 <div class="table-wrap">
   <table class="data-table is-stackable">
-    <thead><tr><th>Company</th><th>Industry</th><th>Contact</th><th>Support Team</th><th>Actions</th></tr></thead>
+    <thead><tr><th>Company</th><th>Industry</th><th>Contact</th><th>Support Team</th><th>Users</th><th>Sub-clients</th><th>Projects</th><th>Tickets</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>
       <% companies.forEach(function(c) { %>
         <tr>
@@ -58,10 +68,16 @@
           <td data-label="Industry"><%= c.industry || '—' %></td>
           <td data-label="Contact"><%= c.contactName || '—' %><% if (c.contactEmail) { %><br><span class="text-muted"><%= c.contactEmail %></span><% } %></td>
           <td data-label="Support Team"><%= c.teamName || '—' %></td>
+          <td data-label="Users"><%= c.userCount %></td>
+          <td data-label="Sub-clients"><%= c.subClientCount %></td>
+          <td data-label="Projects"><%= c.projectCount %></td>
+          <td data-label="Tickets"><%= c.ticketCount %></td>
+          <td data-label="Status"><%- include('../partials/status-badge', { status: c.isActive ? 'Active' : 'Deactivated' }) %></td>
           <td data-label="Actions">
             <details>
               <summary class="btn btn-secondary btn-sm">Edit</summary>
               <form action="/admin/companies/<%= encodeURIComponent(c.name) %>" method="POST" class="mt-sm flex-col gap-sm">
+                <input type="text" name="name" value="<%= c.name %>" placeholder="Company name">
                 <input type="text" name="contactName" value="<%= c.contactName || '' %>" placeholder="Contact name">
                 <input type="email" name="contactEmail" value="<%= c.contactEmail || '' %>" placeholder="Contact email">
                 <input type="tel" name="contactPhone" value="<%= c.contactPhone || '' %>" placeholder="Contact phone">
@@ -73,6 +89,10 @@
                 <button type="submit" class="btn btn-primary btn-sm">Save</button>
               </form>
             </details>
+            <form action="/admin/companies/<%= encodeURIComponent(c.name) %>/status" method="POST">
+              <input type="hidden" name="active" value="<%= c.isActive ? '0' : '1' %>">
+              <button type="submit" class="btn btn-ghost btn-sm"><%= c.isActive ? 'Deactivate' : 'Activate' %></button>
+            </form>
           </td>
         </tr>
       <% }) %>

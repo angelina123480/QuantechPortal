@@ -5,11 +5,12 @@
 const SUB_CLIENTS = [
   { id: 'sc1', parentCompany: 'ABC Bank', name: 'Beirut Branch', contactName: null, contactEmail: null, contactPhone: null },
   { id: 'sc2', parentCompany: 'ABC Bank', name: 'Tripoli Branch', contactName: null, contactEmail: null, contactPhone: null },
+  { id: 'sc3', parentCompany: 'ABC Bank', name: 'Byblos Branch (closed)', contactName: null, contactEmail: null, contactPhone: null, isActive: false },
 ];
 
 function buildSubClients() {
   const now = new Date();
-  return SUB_CLIENTS.map((s) => ({ ...s, createdAt: now }));
+  return SUB_CLIENTS.map((s) => ({ ...s, isActive: s.isActive !== false, createdAt: now }));
 }
 
 module.exports = { buildSubClients, SUB_CLIENTS };

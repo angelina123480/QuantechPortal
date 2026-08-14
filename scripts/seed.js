@@ -1,4 +1,5 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { Client } = require('@neondatabase/serverless');
 const { buildDepartments } = require('../src/data/seed/departments');
@@ -52,8 +53,8 @@ async function seed() {
     console.log(`Inserting ${companies.length} companies...`);
     for (const c of companies) {
       await client.query(
-        'INSERT INTO companies (name, contact_name, contact_email, contact_phone, industry, team_id, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)',
-        [c.name, c.contactName, c.contactEmail, c.contactPhone, c.industry, c.teamId, c.createdAt]
+        'INSERT INTO companies (name, contact_name, contact_email, contact_phone, industry, team_id, is_active, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+        [c.name, c.contactName, c.contactEmail, c.contactPhone, c.industry, c.teamId, c.isActive, c.createdAt]
       );
     }
 
@@ -62,8 +63,8 @@ async function seed() {
     console.log(`Inserting ${subClients.length} sub-clients...`);
     for (const s of subClients) {
       await client.query(
-        'INSERT INTO sub_clients (id, parent_company, name, contact_name, contact_email, contact_phone, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)',
-        [s.id, s.parentCompany, s.name, s.contactName, s.contactEmail, s.contactPhone, s.createdAt]
+        'INSERT INTO sub_clients (id, parent_company, name, contact_name, contact_email, contact_phone, is_active, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+        [s.id, s.parentCompany, s.name, s.contactName, s.contactEmail, s.contactPhone, s.isActive, s.createdAt]
       );
     }
 
@@ -84,10 +85,25 @@ async function seed() {
     console.log(`Inserting ${users.length} users...`);
     for (const u of users) {
       await client.query(
-        `INSERT INTO users (id, name, email, password_hash, role, company, sub_client_id, department, title, phone, notification_prefs, created_at, team_id, is_active)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-        [u.id, u.name, u.email, u.passwordHash, u.role, u.company, u.subClientId, u.department, u.title, u.phone, JSON.stringify(u.notificationPrefs), u.createdAt, u.teamId, u.isActive]
+        `INSERT INTO users (id, name, email, password_hash, role, company, sub_client_id, department, title, phone, notification_prefs, created_at, team_id, is_active, invited_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+        [u.id, u.name, u.email, u.passwordHash, u.role, u.company, u.subClientId, u.department, u.title, u.phone, JSON.stringify(u.notificationPrefs), u.createdAt, u.teamId, u.isActive, u.invitedAt]
       );
+    }
+
+    // A fixed, known invite token for the demo invite-pending user (u28), so
+    // verification/demo can hit /reset-password/:token directly without
+    // grepping server logs — hashed the exact same way passwordResetModel does.
+    const invitedDemoUser = usersById.u28;
+    if (invitedDemoUser) {
+      const DEMO_INVITE_TOKEN = 'demo-invite-token-0000000000000000000000000000000000000000000000000000';
+      const tokenHash = crypto.createHash('sha256').update(DEMO_INVITE_TOKEN).digest('hex');
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await client.query(
+        'INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, purpose, created_at) VALUES ($1,$2,$3,$4,$5,now())',
+        [uuidv4(), invitedDemoUser.id, tokenHash, expiresAt, 'invite']
+      );
+      console.log(`Demo invite link: /reset-password/${DEMO_INVITE_TOKEN}`);
     }
 
     console.log('Linking team leaders...');

@@ -12,9 +12,6 @@ router.get('/login/verify-2fa', redirectIfAuthenticated, authController.showVeri
 router.post('/login/verify-2fa', redirectIfAuthenticated, loginLimiter, asyncHandler(authController.verifyTwoFactor));
 router.post('/logout', requireLogin, authController.logout);
 
-router.get('/register', redirectIfAuthenticated, asyncHandler(authController.showRegister));
-router.post('/register', redirectIfAuthenticated, asyncHandler(authController.register));
-
 router.get('/forgot-password', redirectIfAuthenticated, authController.showForgotPassword);
 router.post('/forgot-password', redirectIfAuthenticated, loginLimiter, asyncHandler(authController.forgotPassword));
 router.get('/reset-password/:token', redirectIfAuthenticated, asyncHandler(authController.showResetPassword));

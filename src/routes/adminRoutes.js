@@ -9,6 +9,7 @@ const slaAdminController = require('../controllers/admin/slaAdminController');
 const workflowAdminController = require('../controllers/admin/workflowAdminController');
 const permissionAdminController = require('../controllers/admin/permissionAdminController');
 const auditLogController = require('../controllers/admin/auditLogController');
+const hierarchyController = require('../controllers/admin/hierarchyController');
 const { requireLogin, requireAdmin, requireSuperAdmin } = require('../middleware/auth');
 const { asyncHandler } = require('../utils/asyncHandler');
 
@@ -20,14 +21,21 @@ router.get('/export.csv', asyncHandler(adminController.exportCsv));
 
 router.get('/users', asyncHandler(userAdminController.index));
 router.post('/users', asyncHandler(userAdminController.create));
+router.get('/users/:id', asyncHandler(userAdminController.show));
 router.post('/users/:id', asyncHandler(userAdminController.update));
+router.post('/users/:id/status', asyncHandler(userAdminController.setStatus));
 router.post('/users/:id/reset-password', asyncHandler(userAdminController.resetPassword));
 
 router.get('/companies', asyncHandler(companyAdminController.index));
 router.post('/companies', asyncHandler(companyAdminController.create));
 router.get('/companies/:name', asyncHandler(companyAdminController.show));
 router.post('/companies/:name', asyncHandler(companyAdminController.update));
+router.post('/companies/:name/status', asyncHandler(companyAdminController.setStatus));
 router.post('/companies/:name/sub-clients', asyncHandler(companyAdminController.createSubClient));
+router.post('/companies/:name/sub-clients/:subClientId', asyncHandler(companyAdminController.updateSubClient));
+router.post('/companies/:name/sub-clients/:subClientId/status', asyncHandler(companyAdminController.setSubClientStatus));
+
+router.get('/hierarchy', asyncHandler(hierarchyController.index));
 
 router.get('/departments', asyncHandler(departmentAdminController.index));
 router.post('/departments', asyncHandler(departmentAdminController.create));

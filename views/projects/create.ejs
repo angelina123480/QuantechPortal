@@ -28,7 +28,7 @@
               <label for="company">Company</label>
               <select id="company" name="company" required data-subclient-map="<%- jsonAttr(subClients) %>">
                 <option value="">Select a company&hellip;</option>
-                <% companies.forEach(function(c) { %><option value="<%= c.name %>" <%= formData.company === c.name ? 'selected' : '' %>><%= c.name %></option><% }) %>
+                <% activeCompanies.forEach(function(c) { %><option value="<%= c.name %>" <%= formData.company === c.name ? 'selected' : '' %>><%= c.name %></option><% }) %>
               </select>
             </div>
             <div class="form-group">

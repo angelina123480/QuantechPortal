@@ -1,12 +1,10 @@
 const userModel = require('../models/userModel');
-const companyModel = require('../models/companyModel');
 const passwordResetModel = require('../models/passwordResetModel');
 const twoFactorService = require('../services/twoFactorService');
 const emailService = require('../services/emailService');
 const auditLogger = require('../services/auditLogger');
 const { setFlash } = require('../utils/flash');
 const { DEMO_PASSWORD } = require('../data/seed/users');
-const { ROLES } = require('../config/constants');
 const { dashboardPathForRole } = require('../utils/roleRouting');
 
 function showLogin(req, res) {
@@ -105,52 +103,6 @@ function logout(req, res) {
   });
 }
 
-async function showRegister(req, res) {
-  const companies = await companyModel.list();
-  res.render('auth/register', { title: 'Create account', companies, errors: null, formData: {} });
-}
-
-async function register(req, res) {
-  const companies = await companyModel.list();
-  const { name, email, password, confirmPassword, phone, department, title, companyMode } = req.body;
-  const errors = {};
-
-  if (!name || !name.trim()) errors.name = 'Name is required.';
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'A valid email is required.';
-  else if (await userModel.findByEmail(email)) errors.email = 'An account with this email already exists.';
-  if (!password || password.length < 8) errors.password = 'Password must be at least 8 characters.';
-  else if (password !== confirmPassword) errors.password = 'Passwords do not match.';
-
-  let companyName = null;
-  if (companyMode === 'new') {
-    companyName = (req.body.newCompanyName || '').trim();
-    if (!companyName) errors.company = 'Enter your company name.';
-    else if (companies.some((c) => c.name.toLowerCase() === companyName.toLowerCase())) {
-      errors.company = 'That company is already registered — select it from the list instead.';
-    }
-  } else {
-    companyName = req.body.existingCompany || '';
-    if (!companyName || !companies.some((c) => c.name === companyName)) errors.company = 'Select your company.';
-  }
-
-  if (Object.keys(errors).length > 0) {
-    return res.status(400).render('auth/register', { title: 'Create account', companies, errors, formData: req.body });
-  }
-
-  if (companyMode === 'new') {
-    await companyModel.create({ name: companyName, contactName: name, contactEmail: email, contactPhone: phone });
-  }
-
-  const user = await userModel.create({
-    name, email, password, role: ROLES.CLIENT, company: companyName,
-    department: department || '', title: title || '', phone: phone || null,
-  });
-  await auditLogger.log({ user, action: 'user.create', entityType: 'user', entityId: user.id, after: { role: ROLES.CLIENT, company: companyName }, req });
-
-  setFlash(req, 'success', 'Account created — sign in below to get started.');
-  res.redirect('/login');
-}
-
 function showForgotPassword(req, res) {
   res.render('auth/forgot-password', { title: 'Forgot password', sent: false });
 }
@@ -174,30 +126,34 @@ async function forgotPassword(req, res) {
 async function showResetPassword(req, res) {
   const record = await passwordResetModel.findValid(req.params.token);
   if (!record) {
-    return res.status(400).render('auth/reset-password', { title: 'Reset password', invalid: true, errors: null, token: req.params.token });
+    return res.status(400).render('auth/reset-password', { title: 'Reset password', invalid: true, errors: null, token: req.params.token, purpose: null });
   }
-  res.render('auth/reset-password', { title: 'Reset password', invalid: false, errors: null, token: req.params.token });
+  res.render('auth/reset-password', { title: 'Reset password', invalid: false, errors: null, token: req.params.token, purpose: record.purpose });
 }
 
 async function resetPassword(req, res) {
   const record = await passwordResetModel.findValid(req.params.token);
   if (!record) {
-    return res.status(400).render('auth/reset-password', { title: 'Reset password', invalid: true, errors: null, token: req.params.token });
+    return res.status(400).render('auth/reset-password', { title: 'Reset password', invalid: true, errors: null, token: req.params.token, purpose: null });
   }
 
   const { password, confirmPassword } = req.body;
   if (!password || password.length < 8) {
-    return res.status(400).render('auth/reset-password', { title: 'Reset password', invalid: false, errors: { password: 'Password must be at least 8 characters.' }, token: req.params.token });
+    return res.status(400).render('auth/reset-password', { title: 'Reset password', invalid: false, errors: { password: 'Password must be at least 8 characters.' }, token: req.params.token, purpose: record.purpose });
   }
   if (password !== confirmPassword) {
-    return res.status(400).render('auth/reset-password', { title: 'Reset password', invalid: false, errors: { password: 'Passwords do not match.' }, token: req.params.token });
+    return res.status(400).render('auth/reset-password', { title: 'Reset password', invalid: false, errors: { password: 'Passwords do not match.' }, token: req.params.token, purpose: record.purpose });
   }
 
   await userModel.updatePassword(record.userId, password);
   await passwordResetModel.markUsed(record.id);
-  await auditLogger.log({ user: { id: record.userId, name: null, role: null }, action: 'auth.password_reset', entityType: 'user', entityId: record.userId, req });
+  await auditLogger.log({
+    user: { id: record.userId, name: null, role: null },
+    action: record.purpose === 'invite' ? 'auth.invite_accepted' : 'auth.password_reset',
+    entityType: 'user', entityId: record.userId, req,
+  });
 
-  setFlash(req, 'success', 'Password reset — sign in with your new password.');
+  setFlash(req, 'success', record.purpose === 'invite' ? 'Welcome! Your password is set — sign in below to get started.' : 'Password reset — sign in with your new password.');
   res.redirect('/login');
 }
 
@@ -207,8 +163,6 @@ module.exports = {
   showVerifyTwoFactor,
   verifyTwoFactor,
   logout,
-  showRegister,
-  register,
   showForgotPassword,
   forgotPassword,
   showResetPassword,

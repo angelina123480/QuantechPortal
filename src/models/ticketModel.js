@@ -474,9 +474,15 @@ function computeStats(tickets, categories = []) {
   return stats;
 }
 
+async function countsByCompany() {
+  const res = await pool.query('SELECT company, count(*)::int AS n FROM tickets WHERE company IS NOT NULL GROUP BY company');
+  return Object.fromEntries(res.rows.map((r) => [r.company, r.n]));
+}
+
 module.exports = {
   findById,
   listVisibleTo,
+  countsByCompany,
   create,
   addReply,
   changeStatus,

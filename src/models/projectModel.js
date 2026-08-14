@@ -51,6 +51,7 @@ function buildFilterClauses(user, filters) {
   if (filters.priority) addClause('priority = ?', filters.priority);
   if (filters.company) addClause('company = ?', filters.company);
   if (filters.teamId) addClause('team_id = ?', filters.teamId);
+  if (filters.projectManagerId) addClause('project_manager_id = ?', filters.projectManagerId);
   if (filters.search) {
     const q = `%${filters.search.trim().toLowerCase()}%`;
     params.push(q);
@@ -154,4 +155,9 @@ function computeProgress(milestones) {
   return Math.round(total / milestones.length);
 }
 
-module.exports = { list, findById, create, update, updateStatus, remove, computeProgress, canAccess };
+async function countsByCompany() {
+  const res = await pool.query('SELECT company, count(*)::int AS n FROM projects WHERE company IS NOT NULL GROUP BY company');
+  return Object.fromEntries(res.rows.map((r) => [r.company, r.n]));
+}
+
+module.exports = { list, findById, create, update, updateStatus, remove, computeProgress, canAccess, countsByCompany };

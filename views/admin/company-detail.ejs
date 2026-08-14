@@ -3,97 +3,177 @@
 <div class="page-header">
   <div class="page-header-title">
     <h1><%= company.name %></h1>
-    <p><%= company.industry || 'Enterprise client' %> &middot; Support team: <%= team ? team.name : 'Unassigned' %></p>
+    <p>
+      <%= company.industry || 'Enterprise client' %> &middot; Support team: <%= team ? team.name : 'Unassigned' %>
+      &middot; <%- include('../partials/status-badge', { status: company.isActive ? 'Active' : 'Deactivated' }) %>
+    </p>
   </div>
   <div class="page-header-actions">
+    <form action="/admin/companies/<%= encodeURIComponent(company.name) %>/status" method="POST">
+      <input type="hidden" name="active" value="<%= company.isActive ? '0' : '1' %>">
+      <button type="submit" class="btn btn-secondary"><%= company.isActive ? 'Deactivate' : 'Activate' %></button>
+    </form>
     <a href="/admin/companies" class="btn btn-ghost">Back to Companies</a>
   </div>
 </div>
 
-<div class="stat-grid">
-  <div class="stat-card is-accent-neutral">
-    <div class="stat-card-top"><span class="stat-card-label">Total tickets</span></div>
-    <div class="stat-card-value"><%= tickets.length %></div>
-  </div>
-  <div class="stat-card is-accent-info">
-    <div class="stat-card-top"><span class="stat-card-label">Active tickets</span></div>
-    <div class="stat-card-value"><%= activeTickets.length %></div>
-  </div>
-  <div class="stat-card is-accent-success">
-    <div class="stat-card-top"><span class="stat-card-label">Resolved / closed</span></div>
-    <div class="stat-card-value"><%= resolvedTickets.length %></div>
-  </div>
-  <div class="stat-card is-accent-neutral">
-    <div class="stat-card-top"><span class="stat-card-label">Users</span></div>
-    <div class="stat-card-value"><%= roster.length %></div>
-  </div>
-</div>
+<nav class="section-nav" data-section-tabs>
+  <a href="#overview" class="section-nav-item" data-section-tab="overview">Overview</a>
+  <a href="#users" class="section-nav-item" data-section-tab="users">Users (<%= roster.length %>)</a>
+  <a href="#sub-clients" class="section-nav-item" data-section-tab="sub-clients">Sub-clients (<%= subClients.length %>)</a>
+  <a href="#projects" class="section-nav-item" data-section-tab="projects">Projects (<%= projects.length %>)</a>
+  <a href="#tickets" class="section-nav-item" data-section-tab="tickets">Tickets (<%= tickets.length %>)</a>
+</nav>
 
-<div class="card mb-lg">
-  <div class="card-header"><h3>Contact Information</h3></div>
-  <div class="card-body">
-    <div class="meta-list">
-      <div class="meta-row"><span class="meta-row-label">Primary contact</span><span class="meta-row-value"><%= company.contactName || '—' %></span></div>
-      <div class="meta-row"><span class="meta-row-label">Email</span><span class="meta-row-value"><%= company.contactEmail || '—' %></span></div>
-      <div class="meta-row"><span class="meta-row-label">Phone</span><span class="meta-row-value"><%= company.contactPhone || '—' %></span></div>
+<div data-section-panel="overview">
+  <div class="stat-grid">
+    <div class="stat-card is-accent-neutral">
+      <div class="stat-card-top"><span class="stat-card-label">Total tickets</span></div>
+      <div class="stat-card-value"><%= tickets.length %></div>
+    </div>
+    <div class="stat-card is-accent-info">
+      <div class="stat-card-top"><span class="stat-card-label">Active tickets</span></div>
+      <div class="stat-card-value"><%= activeTickets.length %></div>
+    </div>
+    <div class="stat-card is-accent-success">
+      <div class="stat-card-top"><span class="stat-card-label">Resolved / closed</span></div>
+      <div class="stat-card-value"><%= resolvedTickets.length %></div>
+    </div>
+    <div class="stat-card is-accent-neutral">
+      <div class="stat-card-top"><span class="stat-card-label">Users</span></div>
+      <div class="stat-card-value"><%= roster.length %></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Contact Information</h3></div>
+    <div class="card-body">
+      <div class="meta-list">
+        <div class="meta-row"><span class="meta-row-label">Primary contact</span><span class="meta-row-value"><%= company.contactName || '—' %></span></div>
+        <div class="meta-row"><span class="meta-row-label">Email</span><span class="meta-row-value"><%= company.contactEmail || '—' %></span></div>
+        <div class="meta-row"><span class="meta-row-label">Phone</span><span class="meta-row-value"><%= company.contactPhone || '—' %></span></div>
+      </div>
+
+      <details class="mt-md">
+        <summary class="btn btn-secondary btn-sm">Edit Company</summary>
+        <form action="/admin/companies/<%= encodeURIComponent(company.name) %>" method="POST" class="mt-sm flex-col gap-sm" style="max-width: 420px;">
+          <input type="text" name="name" value="<%= company.name %>" placeholder="Company name" required>
+          <input type="text" name="contactName" value="<%= company.contactName || '' %>" placeholder="Contact name">
+          <input type="email" name="contactEmail" value="<%= company.contactEmail || '' %>" placeholder="Contact email">
+          <input type="tel" name="contactPhone" value="<%= company.contactPhone || '' %>" placeholder="Contact phone">
+          <input type="text" name="industry" value="<%= company.industry || '' %>" placeholder="Industry">
+          <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+        </form>
+      </details>
     </div>
   </div>
 </div>
 
-<div class="card mb-lg">
-  <div class="card-header"><h3>Company Users (<%= roster.length %>)</h3></div>
-  <div class="card-body">
-    <% roster.forEach(function(u) { %>
-      <div class="recent-ticket-item">
-        <div class="recent-ticket-main">
-          <span class="recent-ticket-title"><%= u.name %></span>
-          <div class="recent-ticket-meta"><span><%= u.title || u.department %></span><span>&middot;</span><span><%= u.email %></span></div>
-        </div>
-      </div>
-    <% }) %>
+<div data-section-panel="users" hidden>
+  <div class="card">
+    <div class="card-header"><h3>Company Users (<%= roster.length %>)</h3></div>
+    <div class="card-body">
+      <% if (roster.length === 0) { %>
+        <p class="text-muted">No users yet.</p>
+      <% } %>
+      <% roster.forEach(function(u) { %>
+        <a href="/admin/users/<%= u.id %>" class="recent-ticket-item">
+          <div class="recent-ticket-main">
+            <span class="recent-ticket-title"><%= u.name %></span>
+            <div class="recent-ticket-meta"><span><%= u.title || u.department %></span><span>&middot;</span><span><%= u.email %></span></div>
+          </div>
+          <%- include('../partials/status-badge', { status: u.isActive ? 'Active' : 'Deactivated' }) %>
+        </a>
+      <% }) %>
+    </div>
   </div>
 </div>
 
-<div class="card mb-lg">
-  <div class="card-header"><h3>Sub-clients (<%= subClients.length %>)</h3></div>
-  <div class="card-body">
-    <% if (subClients.length === 0) { %>
-      <p class="text-muted">No sub-clients yet — add one below for a branch or department that needs its own scoped view of this company's tickets.</p>
-    <% } %>
-    <% subClients.forEach(function(s) { %>
-      <div class="recent-ticket-item">
-        <div class="recent-ticket-main">
-          <span class="recent-ticket-title"><%= s.name %></span>
-          <div class="recent-ticket-meta"><span><%= s.contactName || 'No contact set' %></span><% if (s.contactEmail) { %><span>&middot;</span><span><%= s.contactEmail %></span><% } %></div>
+<div data-section-panel="sub-clients" hidden>
+  <div class="card">
+    <div class="card-header"><h3>Sub-clients (<%= subClients.length %>)</h3></div>
+    <div class="card-body">
+      <% if (subClients.length === 0) { %>
+        <p class="text-muted">No sub-clients yet — add one below for a branch or department that needs its own scoped view of this company's tickets.</p>
+      <% } %>
+      <% subClients.forEach(function(s) { %>
+        <div class="recent-ticket-item" style="flex-wrap: wrap;">
+          <div class="recent-ticket-main">
+            <span class="recent-ticket-title"><%= s.name %></span>
+            <div class="recent-ticket-meta">
+              <span><%= s.contactName || 'No contact set' %></span><% if (s.contactEmail) { %><span>&middot;</span><span><%= s.contactEmail %></span><% } %>
+              <%- include('../partials/status-badge', { status: s.isActive ? 'Active' : 'Deactivated' }) %>
+            </div>
+          </div>
+          <details>
+            <summary class="btn btn-ghost btn-sm">Edit</summary>
+            <form action="/admin/companies/<%= encodeURIComponent(company.name) %>/sub-clients/<%= s.id %>" method="POST" class="mt-sm flex-col gap-sm">
+              <input type="text" name="name" value="<%= s.name %>" required>
+              <input type="text" name="contactName" value="<%= s.contactName || '' %>" placeholder="Contact name">
+              <input type="email" name="contactEmail" value="<%= s.contactEmail || '' %>" placeholder="Contact email">
+              <input type="tel" name="contactPhone" value="<%= s.contactPhone || '' %>" placeholder="Contact phone">
+              <button type="submit" class="btn btn-primary btn-sm">Save</button>
+            </form>
+          </details>
+          <form action="/admin/companies/<%= encodeURIComponent(company.name) %>/sub-clients/<%= s.id %>/status" method="POST">
+            <input type="hidden" name="active" value="<%= s.isActive ? '0' : '1' %>">
+            <button type="submit" class="btn btn-ghost btn-sm"><%= s.isActive ? 'Deactivate' : 'Activate' %></button>
+          </form>
         </div>
-      </div>
-    <% }) %>
-    <form action="/admin/companies/<%= encodeURIComponent(company.name) %>/sub-clients" method="POST" class="mt-md flex-col gap-sm" style="max-width: 420px;">
-      <input type="text" name="name" placeholder="Sub-client name (e.g. Beirut Branch)" required>
-      <input type="text" name="contactName" placeholder="Contact name">
-      <input type="email" name="contactEmail" placeholder="Contact email">
-      <input type="tel" name="contactPhone" placeholder="Contact phone">
-      <button type="submit" class="btn btn-secondary btn-sm">Add Sub-client</button>
-    </form>
+      <% }) %>
+      <form action="/admin/companies/<%= encodeURIComponent(company.name) %>/sub-clients" method="POST" class="mt-md flex-col gap-sm" style="max-width: 420px;">
+        <input type="text" name="name" placeholder="Sub-client name (e.g. Beirut Branch)" required>
+        <input type="text" name="contactName" placeholder="Contact name">
+        <input type="email" name="contactEmail" placeholder="Contact email">
+        <input type="tel" name="contactPhone" placeholder="Contact phone">
+        <button type="submit" class="btn btn-secondary btn-sm">Add Sub-client</button>
+      </form>
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-header"><h3>Ticket History</h3></div>
-  <div class="card-body">
-    <% if (tickets.length === 0) { %>
-      <p class="text-muted">No tickets yet.</p>
-    <% } %>
-    <% tickets.slice(0, 20).forEach(function(t) { %>
-      <a href="/tickets/<%= t.id %>" class="recent-ticket-item">
-        <div class="recent-ticket-main">
-          <span class="recent-ticket-title"><%= t.ticketNumber %> &middot; <%= t.title %></span>
-          <div class="recent-ticket-meta"><span><%= new Date(t.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></span></div>
-        </div>
-        <%- include('../partials/priority-badge', { priority: t.priority }) %>
-        <%- include('../partials/status-badge', { status: t.status }) %>
-      </a>
-    <% }) %>
+<div data-section-panel="projects" hidden>
+  <div class="card">
+    <div class="card-header"><h3>Projects (<%= projects.length %>)</h3></div>
+    <div class="card-body">
+      <% if (projects.length === 0) { %>
+        <p class="text-muted">No projects for this company yet.</p>
+      <% } %>
+      <% projects.forEach(function(p) { %>
+        <a href="/projects/<%= p.id %>" class="recent-ticket-item" style="flex-wrap: wrap;">
+          <div class="recent-ticket-main">
+            <span class="recent-ticket-title"><%= p.name %></span>
+            <div class="recent-ticket-meta">
+              <span><%= p.progress %>% complete</span>
+              <div class="progress-bar" style="width: 120px;"><div class="progress-bar-fill" style="width: <%= p.progress %>%;"></div></div>
+            </div>
+          </div>
+          <%- include('../partials/priority-badge', { priority: p.priority }) %>
+          <%- include('../partials/status-badge', { status: p.status }) %>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<div data-section-panel="tickets" hidden>
+  <div class="card">
+    <div class="card-header"><h3>Ticket History</h3></div>
+    <div class="card-body">
+      <% if (tickets.length === 0) { %>
+        <p class="text-muted">No tickets yet.</p>
+      <% } %>
+      <% tickets.slice(0, 20).forEach(function(t) { %>
+        <a href="/tickets/<%= t.id %>" class="recent-ticket-item">
+          <div class="recent-ticket-main">
+            <span class="recent-ticket-title"><%= t.ticketNumber %> &middot; <%= t.title %></span>
+            <div class="recent-ticket-meta"><span><%= new Date(t.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) %></span></div>
+          </div>
+          <%- include('../partials/priority-badge', { priority: t.priority }) %>
+          <%- include('../partials/status-badge', { status: t.status }) %>
+        </a>
+      <% }) %>
+    </div>
   </div>
 </div>
 

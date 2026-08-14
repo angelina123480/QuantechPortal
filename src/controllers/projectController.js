@@ -12,10 +12,10 @@ const { setFlash } = require('../utils/flash');
 const { PROJECT_STATUSES, MILESTONE_STATUSES, PRIORITIES, MANAGEMENT_ROLES, ROLES } = require('../config/constants');
 
 async function loadFormOptions() {
-  const [companies, teams, subClients, technicians] = await Promise.all([
-    companyModel.list(), teamModel.list(), subClientModel.listAll(), userModel.listTechnicians(),
+  const [companies, activeCompanies, teams, subClients, technicians] = await Promise.all([
+    companyModel.list(), companyModel.list({ isActive: true }), teamModel.list(), subClientModel.listAll(), userModel.listTechnicians(),
   ]);
-  return { companies, teams, subClients, technicians };
+  return { companies, activeCompanies, teams, subClients, technicians };
 }
 
 async function list(req, res) {

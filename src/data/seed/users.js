@@ -48,6 +48,13 @@ const RAW_USERS = [
   // --- Admins ---
   { id: 'u23', name: 'Nour El-Amine', email: 'nour.elamine@quantech.com', role: ROLES.SUPER_ADMIN, company: 'QuanTech SAL', department: 'Enterprise Support', title: 'IT Support Manager', phone: '+961 1 999 105', teamId: null },
   { id: 'u26', name: 'Sami Yared', email: 'sami.yared@quantech.com', role: ROLES.ADMIN, company: 'QuanTech SAL', department: 'Enterprise Support', title: 'IT Manager', phone: '+961 1 999 106', teamId: null },
+
+  // --- Demo-only: an off-boarded agent (deactivated) and an invited-but-not-
+  //     yet-logged-in client admin, to exercise the Phase 4 activate/
+  //     deactivate and invite-pending UI without requiring a manual click
+  //     after every reseed. ---
+  { id: 'u27', name: 'Georges Matta', email: 'georges.matta@quantech.com', role: ROLES.AGENT, company: 'QuanTech SAL', department: 'Enterprise Support', title: 'Support Engineer (former)', phone: '+961 1 999 123', teamId: 'tm5', isActive: false },
+  { id: 'u28', name: 'Nadia Haddad', email: 'nadia.haddad@levantinsurance.com', role: ROLES.CLIENT_ADMIN, company: 'Levant Insurance Group', department: 'IT Department', title: 'IT Director', phone: '+961 1 567 899', invited: true },
 ];
 
 const ADMIN_TIER_ROLES = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
@@ -64,13 +71,19 @@ function buildUsers() {
   const adminPasswordHash = bcrypt.hashSync(adminPassword, 10);
   console.log(`\nAdmin/Super Admin password for this seed run: ${adminPassword}\n(save this now — it will not be shown again)\n`);
 
+  // Invited-but-not-yet-onboarded demo users get an unusable random password
+  // hash (never shared/known), same as what the real invite flow generates —
+  // login stays impossible until they'd use the emailed reset-password link.
+  const unusablePasswordHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
+
   const now = new Date();
   return RAW_USERS.map((u) => ({
     ...u,
     teamId: u.teamId || null,
     subClientId: u.subClientId || null,
-    isActive: true,
-    passwordHash: ADMIN_TIER_ROLES.includes(u.role) ? adminPasswordHash : passwordHash,
+    isActive: u.isActive !== false,
+    passwordHash: u.invited ? unusablePasswordHash : (ADMIN_TIER_ROLES.includes(u.role) ? adminPasswordHash : passwordHash),
+    invitedAt: u.invited ? now : null,
     notificationPrefs: {
       emailOnReply: true,
       emailOnStatusChange: true,

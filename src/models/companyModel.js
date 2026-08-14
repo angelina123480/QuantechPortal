@@ -8,12 +8,20 @@ function mapRow(row) {
     contactPhone: row.contact_phone,
     industry: row.industry,
     teamId: row.team_id,
+    isActive: row.is_active,
     createdAt: row.created_at,
   };
 }
 
-async function list() {
-  const res = await pool.query('SELECT * FROM companies ORDER BY name ASC');
+async function list(filters = {}) {
+  const clauses = [];
+  const params = [];
+  if (filters.isActive !== undefined) {
+    params.push(filters.isActive);
+    clauses.push(`is_active = $${params.length}`);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  const res = await pool.query(`SELECT * FROM companies ${where} ORDER BY name ASC`, params);
   return res.rows.map(mapRow);
 }
 
@@ -43,4 +51,14 @@ async function remove(name) {
   await pool.query('DELETE FROM companies WHERE name = $1', [name]);
 }
 
-module.exports = { list, findByName, create, update, remove };
+async function rename(oldName, newName) {
+  const res = await pool.query('UPDATE companies SET name = $1 WHERE name = $2 RETURNING *', [newName, oldName]);
+  return res.rows.length ? mapRow(res.rows[0]) : null;
+}
+
+async function setActive(name, isActive) {
+  const res = await pool.query('UPDATE companies SET is_active = $1 WHERE name = $2 RETURNING *', [isActive, name]);
+  return res.rows.length ? mapRow(res.rows[0]) : null;
+}
+
+module.exports = { list, findByName, create, update, remove, rename, setActive };
