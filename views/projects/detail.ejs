@@ -57,13 +57,20 @@
             <%- include('../partials/priority-badge', { priority: m.priority }) %>
           </div>
         </div>
-        <form action="/projects/<%= project.id %>/milestones/<%= m.id %>/progress" method="POST" class="flex gap-sm items-center">
-          <select name="status" class="filter-select">
-            <% milestoneStatuses.forEach(function(s) { %><option value="<%= s %>" <%= m.status === s ? 'selected' : '' %>><%= s %></option><% }) %>
-          </select>
-          <input type="number" name="progressPercentage" min="0" max="100" value="<%= m.progressPercentage %>" style="width: 70px;">
-          <button type="submit" class="btn btn-secondary btn-sm">Save</button>
-        </form>
+        <% if (isManager || (m.assignedToId && m.assignedToId === currentUser.id)) { %>
+          <form action="/projects/<%= project.id %>/milestones/<%= m.id %>/progress" method="POST" class="flex gap-sm items-center">
+            <select name="status" class="filter-select">
+              <% milestoneStatuses.forEach(function(s) { %><option value="<%= s %>" <%= m.status === s ? 'selected' : '' %>><%= s %></option><% }) %>
+            </select>
+            <input type="number" name="progressPercentage" min="0" max="100" value="<%= m.progressPercentage %>" style="width: 70px;">
+            <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+          </form>
+        <% } else { %>
+          <div class="flex gap-sm items-center">
+            <%- include('../partials/status-badge', { status: m.status }) %>
+            <span class="text-muted"><%= m.progressPercentage %>%</span>
+          </div>
+        <% } %>
       </div>
     <% }) %>
 
@@ -90,7 +97,7 @@
       <p class="text-muted">No tasks linked to this project yet.</p>
     <% } %>
     <% tasks.forEach(function(t) { %>
-      <a href="/tasks#task-<%= t.id %>" class="recent-ticket-item">
+      <% if (isStaff) { %><a href="/tasks#task-<%= t.id %>" class="recent-ticket-item"><% } else { %><div class="recent-ticket-item" style="cursor: default;"><% } %>
         <div class="recent-ticket-main">
           <span class="recent-ticket-title"><%= t.title %></span>
           <div class="recent-ticket-meta">
@@ -100,7 +107,7 @@
         </div>
         <%- include('../partials/priority-badge', { priority: t.priority }) %>
         <%- include('../partials/status-badge', { status: t.status }) %>
-      </a>
+      <% if (isStaff) { %></a><% } else { %></div><% } %>
     <% }) %>
   </div>
 </div>

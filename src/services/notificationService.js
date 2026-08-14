@@ -15,6 +15,8 @@ const EMAIL_PREF_BY_TYPE = {
   task_assigned: 'emailOnAssignment',
   milestone_assigned: 'emailOnAssignment',
   project_assigned: 'emailOnAssignment',
+  project_created: 'emailOnAssignment',
+  milestone_completed: 'emailOnStatusChange',
 };
 
 /**

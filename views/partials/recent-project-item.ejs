@@ -1,0 +1,12 @@
+<a href="/projects/<%= project.id %>" class="recent-ticket-item">
+  <div class="recent-ticket-main">
+    <span class="recent-ticket-title"><%= project.name %></span>
+    <div class="recent-ticket-meta">
+      <span><%= project.company %></span>
+      <span>&middot;</span>
+      <span><%= project.progress %>% complete</span>
+    </div>
+  </div>
+  <%- include('priority-badge', { priority: project.priority }) %>
+  <%- include('status-badge', { status: project.status }) %>
+</a>

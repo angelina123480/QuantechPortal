@@ -18,6 +18,10 @@ function buildMilestones() {
     { id: 'ms8', projectId: 'proj2', name: 'Discovery & Planning', description: 'Audit current KB articles and canned responses for gaps.', assignedToId: 'u12', startDate: rel(-10), dueDate: rel(0), status: 'In Progress', progressPercentage: 40, priority: 'Medium', sortOrder: 0 },
     { id: 'ms9', projectId: 'proj2', name: 'Build & Integration', description: 'Build out the new KB structure and canned-response library.', assignedToId: 'u21', startDate: rel(0), dueDate: rel(25), status: 'Not Started', progressPercentage: 0, priority: 'Medium', sortOrder: 1 },
     { id: 'ms10', projectId: 'proj2', name: 'Rollout & Training', description: 'Train the support team and roll out to production.', assignedToId: null, startDate: rel(25), dueDate: rel(50), status: 'Not Started', progressPercentage: 0, priority: 'Low', sortOrder: 2 },
+
+    // ---------- Project 3: Beirut Branch ATM Network Refresh (2) ----------
+    { id: 'ms11', projectId: 'proj3', name: 'Site Survey & Cabling', description: 'Survey ATM connectivity points and run new backup lines.', assignedToId: 'u17', startDate: rel(-20), dueDate: rel(-5), status: 'Completed', progressPercentage: 100, priority: 'Medium', sortOrder: 0 },
+    { id: 'ms12', projectId: 'proj3', name: 'Failover Testing', description: 'Cut over ATMs to the new backup links and test failover.', assignedToId: 'u18', startDate: rel(-5), dueDate: rel(15), status: 'In Progress', progressPercentage: 45, priority: 'Medium', sortOrder: 1 },
   ].map((m) => ({ ...m, createdAt: now, updatedAt: now }));
 }
 

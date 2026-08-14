@@ -9,7 +9,7 @@ const subClientModel = require('../models/subClientModel');
 const notificationService = require('../services/notificationService');
 const auditLogger = require('../services/auditLogger');
 const { setFlash } = require('../utils/flash');
-const { PROJECT_STATUSES, MILESTONE_STATUSES, PRIORITIES, MANAGEMENT_ROLES } = require('../config/constants');
+const { PROJECT_STATUSES, MILESTONE_STATUSES, PRIORITIES, MANAGEMENT_ROLES, ROLES } = require('../config/constants');
 
 async function loadFormOptions() {
   const [companies, teams, subClients, technicians] = await Promise.all([
@@ -34,7 +34,7 @@ async function list(req, res) {
     filters.teamId = req.query.teamId;
   }
 
-  const { projects, total, page, pageSize } = await projectModel.list(filters);
+  const { projects, total, page, pageSize } = await projectModel.list(req.user, filters);
   const projectIds = projects.map((p) => p.id);
   const milestonesByProject = {};
   await Promise.all(projectIds.map(async (id) => {
@@ -102,13 +102,20 @@ async function create(req, res) {
     });
   }
 
+  const clientAdmins = await userModel.listAll({ role: ROLES.CLIENT_ADMIN, company: project.company });
+  if (clientAdmins.length) {
+    await notificationService.notify(clientAdmins.map((u) => u.id), {
+      type: 'project_created', title: `New project: ${project.name}`, body: `${project.company} — ${project.name}`, projectId: project.id,
+    });
+  }
+
   setFlash(req, 'success', `${project.name} was created.`);
   res.redirect(`/projects/${project.id}`);
 }
 
 async function loadProjectOr404(req, res) {
   const project = await projectModel.findById(req.params.id);
-  if (!project) {
+  if (!project || !projectModel.canAccess(req.user, project)) {
     res.status(404).render('errors/404', { title: 'Project not found' });
     return null;
   }
@@ -127,7 +134,10 @@ async function detail(req, res) {
   const technicianById = Object.fromEntries(technicians.map((t) => [t.id, t]));
 
   const ticketIds = [...new Set(tasks.map((t) => t.ticketId).filter(Boolean))];
-  const relatedTickets = (await Promise.all(ticketIds.map((id) => ticketModel.findById(id)))).filter(Boolean);
+  let relatedTickets = (await Promise.all(ticketIds.map((id) => ticketModel.findById(id)))).filter(Boolean);
+  if (!userModel.isStaff(req.user)) {
+    relatedTickets = relatedTickets.filter((t) => ticketModel.canAccess(req.user, t));
+  }
 
   const projectManager = project.projectManagerId ? technicianById[project.projectManagerId] || await userModel.findById(project.projectManagerId) : null;
   const team = project.teamId ? await teamModel.findById(project.teamId) : null;
@@ -258,6 +268,7 @@ async function updateMilestoneProgress(req, res) {
     return res.redirect(`/projects/${project.id}`);
   }
   const progressPercentage = (req.body || {}).progressPercentage;
+  const becameCompleted = status === 'Completed' && milestone.status !== 'Completed';
 
   await milestoneModel.updateProgress(milestone.id, { status, progressPercentage });
   await auditLogger.log({
@@ -265,6 +276,17 @@ async function updateMilestoneProgress(req, res) {
     before: { status: milestone.status, progress: milestone.progressPercentage },
     after: { status, progress: progressPercentage }, req,
   });
+
+  if (becameCompleted) {
+    const clientAdmins = await userModel.listAll({ role: ROLES.CLIENT_ADMIN, company: project.company });
+    if (clientAdmins.length) {
+      await notificationService.notify(clientAdmins.map((u) => u.id), {
+        type: 'milestone_completed', title: `Milestone completed: ${milestone.name}`, body: `${project.name} — ${milestone.name}`,
+        projectId: project.id, milestoneId: milestone.id,
+      });
+    }
+  }
+
   setFlash(req, 'success', `${milestone.name} updated.`);
   res.redirect(`/projects/${project.id}`);
 }

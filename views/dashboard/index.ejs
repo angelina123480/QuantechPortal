@@ -49,6 +49,24 @@
     <div class="stat-card-value"><%= highPriorityTickets.length %></div>
     <div class="stat-card-meta">High &amp; critical, still open</div>
   </a>
+
+  <a href="/projects" class="stat-card is-accent-info">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Active projects</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= activeProjectsCount %></div>
+    <div class="stat-card-meta">Planned or in progress</div>
+  </a>
+
+  <a href="/projects?status=Completed" class="stat-card is-accent-success">
+    <div class="stat-card-top">
+      <span class="stat-card-label">Completed projects</span>
+      <span class="stat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
+    </div>
+    <div class="stat-card-value"><%= completedProjectsCount %></div>
+    <div class="stat-card-meta">Delivered to date</div>
+  </a>
 </div>
 
 <div class="dashboard-grid">
@@ -85,16 +103,34 @@
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-header"><h3>Recent Activity</h3></div>
-    <div class="card-body">
-      <% if (recentActivity.length === 0) { %>
-        <p class="text-muted">No activity yet.</p>
-      <% } else { %>
-        <% recentActivity.forEach(function(item) { %>
-          <%- include('../partials/activity-item', { item }) %>
-        <% }) %>
-      <% } %>
+  <div class="flex-col gap-lg">
+    <div class="card">
+      <div class="card-header">
+        <h3>Your Projects</h3>
+        <a href="/projects" class="card-link">View all</a>
+      </div>
+      <div class="card-body">
+        <% if (recentProjects.length === 0) { %>
+          <p class="text-muted">No projects yet.</p>
+        <% } else { %>
+          <% recentProjects.forEach(function(project) { %>
+            <%- include('../partials/recent-project-item', { project }) %>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Recent Activity</h3></div>
+      <div class="card-body">
+        <% if (recentActivity.length === 0) { %>
+          <p class="text-muted">No activity yet.</p>
+        <% } else { %>
+          <% recentActivity.forEach(function(item) { %>
+            <%- include('../partials/activity-item', { item }) %>
+          <% }) %>
+        <% } %>
+      </div>
     </div>
   </div>
 </div>

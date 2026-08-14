@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../data/db');
+const userModel = require('./userModel');
 
 function mapRow(row) {
   return {
@@ -22,13 +23,28 @@ function mapRow(row) {
   };
 }
 
-function buildFilterClauses(filters) {
+// Same two-tier rule as ticketModel.canAccess: staff see everything;
+// end_client_user (subClientId set) is scoped to that sub-client;
+// client/client_admin (subClientId null) see the whole company.
+function canAccess(user, project) {
+  if (!user || !project) return false;
+  if (userModel.isStaff(user)) return true;
+  if (user.subClientId) return project.subClientId === user.subClientId;
+  return project.company === user.company;
+}
+
+function buildFilterClauses(user, filters) {
   const clauses = [];
   const params = [];
 
   function addClause(sql, value) {
     params.push(value);
     clauses.push(sql.replace('?', `$${params.length}`));
+  }
+
+  if (!userModel.isStaff(user)) {
+    if (user.subClientId) addClause('sub_client_id = ?', user.subClientId);
+    else addClause('company = ?', user.company);
   }
 
   if (filters.status) addClause('status = ?', filters.status);
@@ -50,8 +66,8 @@ function buildFilterClauses(filters) {
  * When filters.page is set, returns { projects, total, page, pageSize }
  * instead of a bare array — same shape as ticketModel.listVisibleTo.
  */
-async function list(filters = {}) {
-  const { where, params } = buildFilterClauses(filters);
+async function list(user, filters = {}) {
+  const { where, params } = buildFilterClauses(user, filters);
 
   if (filters.page) {
     const pageSize = filters.pageSize || 25;
@@ -138,4 +154,4 @@ function computeProgress(milestones) {
   return Math.round(total / milestones.length);
 }
 
-module.exports = { list, findById, create, update, updateStatus, remove, computeProgress };
+module.exports = { list, findById, create, update, updateStatus, remove, computeProgress, canAccess };

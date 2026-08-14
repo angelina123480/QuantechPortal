@@ -79,6 +79,8 @@ const NOTIFICATION_TYPES = [
   'task_assigned',
   'milestone_assigned',
   'project_assigned',
+  'project_created',
+  'milestone_completed',
 ];
 
 const TICKET_LINK_TYPES = ['duplicate', 'related', 'parent'];
